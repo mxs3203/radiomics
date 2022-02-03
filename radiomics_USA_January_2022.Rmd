@@ -1,0 +1,901 @@
+---
+title: "Radiomics"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+library(readxl)
+library(pheatmap)
+library(factoextra)
+library(cluster)
+library(tidyverse)
+library(plotly)
+library(ggmosaic)
+library(ggpubr)
+library(ggbiplot)
+library(NMF)
+suppressMessages(library(survminer))
+suppressMessages(library(survplot))
+setwd("~/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/NMF_Radiomics/")
+
+source("~/GenomeDK_local/CancerEvolution/phd/Analysis/cnsignatures/functions.R")
+```
+
+# Loading Everything
+```{r pressure, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+
+indx100 = get(load("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/indx100.RData"))
+
+ith <- read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/comb_ith_analysis.20170127.txt", sep = "\t")
+ith$SNV_py <- as.numeric(as.character(ith$SNV_py))
+ith$SCNA <- as.numeric(as.character(ith$SCNA))
+ith$sampleID <- rownames(ith)
+ith2 <- read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/scna_ith_trx500.20180731.txt")
+ith2$FractionTrunk <- as.numeric(as.character(ith2$FractionTrunk))
+ith2$Heterogeneous <- as.numeric(as.character(ith2$Heterogeneous))
+ith2$Homogeneous <- as.numeric(as.character(ith2$Homogeneous))
+
+clin_ = as.data.frame(get(load(("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Clinical/tracerx_clin.20180701.RData"))))
+clin_$ID = rownames(clin_)
+clin_$Lesion1SizePath = as.numeric(as.character(clin_$Lesion1SizePath))
+clin = read_excel("~/Downloads/TRACERx all patients- July 2020 version 2.xlsx")
+clin$ID = paste0(substr(clin$Shorter_ID,0,3), "0",substr(clin$Shorter_ID,4, 8))
+pyrad = read_excel("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Radiomics/Radiomics20200801/PyRadiomics_20200718/original.xlsx")
+pyrad$pathology = case_when(
+  pyrad$pathhistr_tracerx_lesion1form == "Invasive adenocarcinoma" ~ "Invasive adenocarcinoma",
+  pyrad$pathhistr_tracerx_lesion1form == "Squamous cell carcinoma" ~ "Squamous cell carcinoma",
+  TRUE ~ "Other"
+)
+pyrad = pyrad[-is.na(pyrad),]
+
+
+pyrad = merge(pyrad, clin, by.y = "ID", by.x = "sampleid", all.x = T )
+pyrad = merge(pyrad, clin_ %>% select("ID", "Lesion1SizePath"), by.y = "ID", by.x = "sampleid", all.x = T )
+
+phyl_groups = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/phyl_groups.txt")
+phyl_groups$sampleid = rownames(phyl_groups)
+
+mutations = read.csv2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/haveDriverMuts.csv", sep=",")
+
+oracle= read.csv2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/2020-12-08TX421_oracle.csv", sep = ",")
+oracle$sampleid = paste0(substr(oracle$PatientID, 3,5), "0", substr(oracle$PatientID, 6,8))
+oracle$RiskScore <- as.numeric(as.character(oracle$RiskScore))
+oracle = oracle %>% 
+  dplyr::group_by(sampleid) %>%
+  dplyr::summarize(RiskScore = mean(RiskScore, na.rm = T),
+            n = n(),
+            lows = sum(bin == "Low"),
+            highs = sum(bin == "High"),
+            bin = ifelse(highs >= lows, "High", "Low"))
+
+extra_info = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/NewITH/20210722_20210531_tracerx_sample_table_primary_421_annotated.tsv")
+new_ith = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/NewITH/20210805_Evo_subgroups.tsv")
+new_ith$sampleid = paste0(substr(as.character(new_ith$tumour_id), 0, 3),"0", substr(as.character(new_ith$tumour_id), 4, 6))
+
+features = colnames(pyrad)[52:151]
+
+pyrad = pyrad[complete.cases(pyrad[,features]), ]
+minMax <- function(x){
+  (x - min(x))/(max(x)-min(x))
+}
+
+pyrad[,features] = apply(pyrad[,features], 2, minMax)
+features = features[-grepl("firstorder", features )]
+
+```
+# Project Plan
+![Project Plan](/Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/NMF_Radiomics/Radiomics.png)
+
+
+
+# What features to take? 
+- Not sure to take Zone Entropy or not \
+
+- Run Entropy and Zone Entropy do not follow the same patter on biplot \
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#wavelet.LLL
+kernel = "original"
+features_of_interest = c(
+  paste0(kernel ,"_glcm_JointEntropy"),
+  paste0(kernel ,"_glcm_DifferenceEntropy"),
+  paste0(kernel ,"_glcm_DifferenceAverage"),
+  paste0(kernel ,"_glcm_DifferenceVariance"),
+  paste0(kernel ,"_glrlm_LongRunEmphasis"),
+  paste0(kernel ,"_gldm_SmallDependenceEmphasis"),
+  paste0(kernel ,"_glrlm_RunPercentage"),
+  paste0(kernel ,"_glszm_ZoneEntropy"),
+  paste0(kernel ,"_glrlm_RunEntropy")
+)
+pyrad[,features_of_interest] = pyrad[,features_of_interest]
+pyrad$original_glrlm_LongRunEmphasis = -pyrad$original_glrlm_LongRunEmphasis
+
+pheatmap(cor(pyrad[,features_of_interest]), 
+         fontsize = 8)
+
+pc = prcomp(pyrad[,features_of_interest],center = T, scale = T)
+ggbiplot(pc, labels=rownames(pc)) + 
+  theme_pubclean()
+
+
+```
+
+
+# Important measures to check
+- We will compare diameter to volume to ITH \
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+pyrad$volume = as.numeric(pyrad$lesion1sizepath)
+pyrad$volume_from_pyrad = as.numeric(pyrad$original_shape_MeshVolume)
+pyrad$diameter = as.numeric(pyrad$original_shape_Maximum2DDiameterSlice)
+
+```
+# how to define radITH
+- Do we need to normalize something by volume? \
+
+- Numbers were a bit wierd when divided by volume therefore I did not divide anything with volume \
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+pyrad$radITH = rowMeans(pyrad[,features_of_interest], na.rm = T)
+Q = 3
+
+
+pyrad$volume_group = gtools::quantcut(pyrad$volume, q=Q, na.rm=TRUE)
+pyrad$diameter_group = gtools::quantcut(pyrad$diameter, q=Q, na.rm=TRUE)
+pyrad$radITH_group = gtools::quantcut(pyrad$radITH, q=Q, na.rm=TRUE)
+```
+
+# Expected correlations
+- Negative cor radITH to volume \
+
+- Positive cor to ORACLE(not true) \
+
+- Volume and diameter are correlated to volume therefore we are probably not confunded by volume \
+
+- We would expect poz. cor. to Heterogenious but not mandatory since we do not know if radITH is the same as bioITH \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+pyrad = merge(pyrad, oracle,by = "sampleid", all.x = T)
+p0 = ggplot(pyrad, aes(x = radITH,  y = volume)) +
+  geom_point() + 
+  geom_smooth(method = "lm")+
+  stat_cor()+
+  scale_y_log10()+
+  theme_minimal() +
+  scale_color_brewer(palette="Set1") 
+
+p1 = ggplot(pyrad, aes(x = radITH,  y = RiskScore)) +
+  geom_point() +
+  ylab("ORACLE Risk Score") +
+  xlab("radITH") +
+  geom_smooth(method = 'lm') +
+  theme_minimal() +
+  stat_cor() +
+  scale_fill_brewer(palette="Set1") 
+p2 = ggplot(pyrad, aes(x = volume,  y = RiskScore)) +
+  geom_point() +
+  ylab("ORACLE Risk Score") +
+  xlab("Volume") +
+  geom_smooth(method = 'lm') +
+  theme_minimal() +
+  stat_cor() +
+  scale_fill_brewer(palette="Set1") 
+p3 = ggplot(pyrad, aes(x = diameter,  y = RiskScore)) +
+  geom_point() +
+  ylab("ORACLE Risk Score") +
+  xlab("Diameter") +
+  geom_smooth(method = 'lm') +
+  theme_minimal() +
+  stat_cor() +
+  scale_fill_brewer(palette="Set1") 
+ggarrange(p0, p1,p2,p3)
+
+
+
+pyrad = merge(pyrad, ith2, by.x = "sampleid", by.y = "SampleID", all.x = T)
+p1= ggplot(pyrad, aes(x = radITH,  y = Homogeneous)) +
+  geom_point() + 
+  stat_cor()+
+  geom_smooth(method = "lm", se= F)+
+  ylab("Homogeneous") +
+  theme_minimal() +
+  scale_color_brewer(palette="Set1") 
+p2= ggplot(pyrad, aes(x = radITH,  y = Heterogeneous)) +
+  geom_point() + 
+  stat_cor()+
+  geom_smooth(method = "lm",se = F)+
+  ylab("Heterogeneious") +
+  theme_minimal() +
+  scale_color_brewer(palette="Set1") 
+p3= ggplot(pyrad, aes(x = radITH,  y = FractionTrunk )) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F)+
+  ylab("FractionTrunk") +
+  stat_cor()+
+  theme_minimal() +
+  scale_color_brewer(palette="Set1") 
+ggarrange(p1,p2,p3)
+
+```
+
+# Mutations
+Let's group DRIVER mutations by Sanchez Vega def \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+vega = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/sanchez-vega-pws_1026.csv", sep = ";")
+muts = get(load("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/WES/patientMutTable_20200622.RData"))
+muts$SampleID = sub('LTX','LTX0',substr(muts$SampleID, 0,8))
+muts = muts %>% 
+  filter(DriverMut == TRUE )
+
+results = data.frame()
+samples = c()
+for (sample in unique(muts$SampleID)){
+  samples = c(samples, sample)
+  tmp_muts = muts %>% filter(SampleID == sample)
+  have_path_mut = c()
+  for (geneGroup in unique(vega$Pathway_pretty)) {
+    vega_group = vega %>% filter(Pathway_pretty == geneGroup) 
+    if (any(vega_group$Gene %in% tmp_muts$Hugo_Symbol == T)) {
+      have_path_mut = c(have_path_mut, 1)
+    } else {
+      have_path_mut = c(have_path_mut, 0)
+    }
+  }
+  results = rbind(results, have_path_mut)
+}
+colnames(results) = as.character(unique(vega$Pathway))
+rownames(results) = samples
+results$SampleID = rownames(results)
+
+
+pyrad = merge(pyrad, results, by.y = "SampleID", by.x = "sampleid", all.x = T)
+
+```
+
+# Let's test Sanchez Vega Muts vs radITH groups (q =3)
+- It seems Adeno is associated with wtn, cell_cycle,pi3k \
+
+- It seems Squamous is associated with pi3k and RTK/KRAS \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+print("Adeno fisher test results")
+tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma")
+for (col in unique(vega$Pathway)){
+  if(length(unique(tmp[,col])) >= 2){
+    
+    test = fisher.test(table(tmp$radITH_group, tmp[,col])) 
+    if (test$p.value <= 0.05){
+      print(col)
+      print(test)
+    }
+  }
+}
+print("Squamous fisher test results")
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma")
+for (col in unique(vega$Pathway)){
+  if(length(unique(tmp[,col])) >= 2){
+    
+    test = fisher.test(table(tmp$radITH_group, tmp[,col])) 
+    if (test$p.value <= 0.05){
+      print(col)
+      print(test)
+    }
+  }
+}
+
+
+```
+
+
+# Does Volume or diameter predict biology?
+- Diameter is not associated at all \
+
+- Volume is associated with HIPPO \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+print("Adeno fisher test results")
+tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma")
+for (col in unique(vega$Pathway)){
+  if(length(unique(tmp[,col])) >= 2){
+    
+    test = fisher.test(table(tmp$diameter_group, tmp[,col])) 
+    if (test$p.value <= 0.05){
+      print(col)
+      print(test)
+    }
+  }
+}
+print("Squamous fisher test results")
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma")
+for (col in unique(vega$Pathway)){
+  if(length(unique(tmp[,col])) >= 2){
+    
+    test = fisher.test(table(tmp$volume_group, tmp[,col])) 
+    if (test$p.value <= 0.05){
+      print(col)
+      print(test)
+    }
+  }
+}
+
+```
+
+# How does radITH associate with survival?
+- In Adeno Heterogenious tumors seem to perform better \
+
+- In Squamous no association \
+
+- In all samples, heterogenious samples seem to perform better \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radITH_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Adeno", 
+             legen_title = "radITH quantiles", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radITH_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Squamous", 
+             legen_title = "radITH quantiles", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+tmp = pyrad 
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radITH_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "All Data", 
+             legen_title = "radITH quantiles", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+
+
+```
+
+# How does volume (diameter) associate to survival?
+- In Adeno large tumors seem to perform the worst(diamter is the same) \
+
+- In Squamous, volume has no clear association \
+
+- In Squamous, Diameter has borderline association \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~volume_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Adeno", 
+             legen_title = "Vol quantiles", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~volume_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Squamous", 
+             legen_title = "Vol quantiles", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~diameter_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Squamous", 
+             legen_title = "Diam. quantiles", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+
+```
+
+# Can we overlap radITH and Volume groups and check survival?
+# In order to increase group sizes, all measures will be split by median (Q=2)
+- Median was calculated based on entire cohort(not per cancer type) \
+
+- In Adeno, big tumors with low radITH seem to perform the worst where small tumors with high radITH perform good(The same goes using radITH-Diameter split) \
+
+- In Squmous we cannot see clear split(The same using radITH-diameter split) \
+
+- In all data we see the similar pattern as in Adeno \
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+pyrad$volume_group_med = ifelse(pyrad$volume <= median(pyrad$volume, na.rm = T), "Low", "High")
+pyrad$rad_group_med = ifelse(pyrad$radITH <= median(pyrad$radITH, na.rm = T), "Low", "High")
+pyrad$radith_volume_group = paste0("Volume: ",pyrad$volume_group_med, "- radITH: ",pyrad$rad_group_med )
+
+tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radith_volume_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Adeno", 
+             legen_title = "Volume-radITH", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radith_volume_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Squamous", 
+             legen_title = "Volume-radITH", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c())
+tmp = pyrad %>% filter(!is.na(rad_group_med), !is.na(volume_group_med))
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radith_volume_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "All Data", 
+             legen_title = "Volume-radITH", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.5,0.5),colors = c())
+
+
+```
+
+# Coxph Model
+- radITH does not help improve cox ph model \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#"Squamous cell carcinoma","Invasive adenocarcinoma"
+pyrad$stage = case_when(
+  pyrad$NSCLCstage == "IB" ~ "I",
+  pyrad$NSCLCstage == "IA" ~ "I",
+  pyrad$NSCLCstage == "IIB" ~ "II",
+  pyrad$NSCLCstage == "IIA" ~ "II",
+  pyrad$NSCLCstage == "IIIA" ~ "III",
+  TRUE ~ as.character(pyrad$NSCLCstage)
+)
+
+tmp = pyrad %>% filter(pathology %in% c("Squamous cell carcinoma","Invasive adenocarcinoma"),
+                       !is.na(stage))
+
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+
+
+
+surv_fit = coxph(surv_os ~ radITH +  volume + diameter + RiskScore  +pathology + smoking_status + stage, 
+                 data = tmp, robust = T, model = T)
+sum_fit = summary(surv_fit)
+for_forest = as.data.frame(sum_fit$coefficients)
+for_forest = cbind(for_forest, (confint(surv_fit)))
+for_forest$param = rownames(for_forest)
+#for_forest$`exp(coef)` = (for_forest$coef)
+breaks = c(0,seq(-5,5,by = 1))
+# and labels
+labels = as.character(breaks)
+ggplot(data=for_forest,
+       aes(x = paste0(param),y = `coef`, ymin =`2.5 %`, ymax = `97.5 %`))+
+  geom_pointrange(aes(col=`coef`))+
+  geom_hline(yintercept =0, linetype=2) + 
+  geom_text(aes(label=paste0(signif.num(`Pr(>|z|)`)),y = 4)) + 
+  geom_errorbar(aes(ymin=`2.5 %`,ymax=`97.5 %`,col=`coef`),width=0.5,cex=1)+
+  theme(plot.title=element_text(size=16,face="bold"),
+        axis.text.x=element_text(face="bold"),
+        axis.title=element_text(size=12,face="bold"))+
+  
+  coord_flip() + 
+  theme_pubclean() + 
+  xlab("") + 
+  ggtitle(paste0("Tracerxs")) + 
+  scale_color_gradient(guide = F, low = "#000000", high = "#000000") +
+  scale_x_discrete(labels=c("RF_predicted_class4"="STING Group 2")) + 
+  scale_y_continuous(limits = c(-5, 5), breaks = breaks, labels = labels,
+                     name = "HR")
+
+
+```
+
+# Hallmarks all samples
+- Association (cor) of radITH with hallmarks \
+
+- Hallmarks computed with SS-GSEA and GSVA \
+
+- P values are adjusted using FDR \
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+tracerx_exp <- readRDS("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/RNAseq/log_tpm_summarized_by_sample_exp.rds")
+colnames(tracerx_exp) = gsub(substring(colnames(tracerx_exp),3,8),pattern = "LTX", replacement = "LTX0")
+
+########## All samples
+hallmarks = hallmarkEnrichment(tracerx_exp,method = "ssgsea") # “gsva”, “ssgsea”, “zscore”, “plage” 
+hall_cols = colnames(hallmarks)[1:50]
+tmp = merge(pyrad, hallmarks, by.x = "sampleid", by.y = "SampleID")
+
+df_res = data.frame()
+for(hal in hall_cols){
+  t = cor.test(tmp[,hal], tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(hal,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.05), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("All samples ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+
+```
+
+# Hallmarks Adeno
+
+- No significant correlations \
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+ids =pyrad %>% 
+  filter(pathology == "Invasive adenocarcinoma") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+
+
+hallmarks = hallmarkEnrichment(tracerx_exp[,ids_to_take],method = "ssgsea") # “gsva”, “ssgsea”, “zscore”, “plage” 
+hall_cols = colnames(hallmarks)[1:50]
+tmp = merge(pyrad, hallmarks, by.x = "sampleid", by.y = "SampleID")
+
+df_res = data.frame()
+for(hal in hall_cols){
+  t = cor.test(tmp[,hal], tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(hal,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Adeno ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+# Hallmarks Squamous
+
+- No significant correlations \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ids = pyrad %>% 
+  filter(pathology == "Squamous cell carcinoma") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+
+
+hallmarks = hallmarkEnrichment(tracerx_exp[,ids_to_take],method = "ssgsea") # “gsva”, “ssgsea”, “zscore”, “plage” 
+hall_cols = colnames(hallmarks)[1:50]
+tmp = merge(pyrad, hallmarks, by.x = "sampleid", by.y = "SampleID")
+
+df_res = data.frame()
+for(hal in hall_cols){
+  t = cor.test(tmp[,hal], tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(hal,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Squamous ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+# Hallmark expression-radITH Correlation in Large vs Small tumors (all samples)
+
+- Large tumors seem to harbour association between radITH and biology \
+
+
+- Small tumors not significant hits \
+
+- Using wavelet kernel it was the opposite \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+######### Big Tumors
+
+ids =pyrad %>% 
+  filter(volume_group_med == "High") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+
+
+hallmarks = hallmarkEnrichment(tracerx_exp[,ids_to_take],method = "ssgsea") # “gsva”, “ssgsea”, “zscore”, “plage” 
+hall_cols = colnames(hallmarks)[1:50]
+tmp = merge(pyrad, hallmarks, by.x = "sampleid", by.y = "SampleID")
+
+df_res = data.frame()
+for(hal in hall_cols){
+  t = cor.test(tmp[,hal], tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(hal,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Large tumors(median) \nssGSEA Hallmark correlation to radITH FDR adjusted pval")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+######### Small Tumors
+ids =pyrad %>% 
+  filter(volume_group_med == "Low") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+
+
+hallmarks = hallmarkEnrichment(tracerx_exp[,ids_to_take],method = "ssgsea") # “gsva”, “ssgsea”, “zscore”, “plage” 
+hall_cols = colnames(hallmarks)[1:50]
+tmp = merge(pyrad, hallmarks, by.x = "sampleid", by.y = "SampleID")
+
+df_res = data.frame()
+for(hal in hall_cols){
+  t = cor.test(tmp[,hal], tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(hal,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Small tumors (median) \nssGSEA Hallmark correlation to radITH FDR adjusted pval")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+```
+
+# Let's split by Size and Pathology and repeat
+- Large Squamous cell tumors show significant hits in DNA repair and MYC targets v2 \
+
+- Small Squmous, no significant hits \
+
+- Small/Big Adeno tumors do not show any significant hits \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#################### Squmous
+ids =pyrad %>% 
+  filter(volume_group_med == "High",
+         pathology == "Squamous cell carcinoma") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+
+
+hallmarks = hallmarkEnrichment(tracerx_exp[,ids_to_take],method = "ssgsea") # “gsva”, “ssgsea”, “zscore”, “plage” 
+hall_cols = colnames(hallmarks)[1:50]
+tmp = merge(pyrad, hallmarks, by.x = "sampleid", by.y = "SampleID")
+
+df_res = data.frame()
+for(hal in hall_cols){
+  t = cor.test(tmp[,hal], tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(hal,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Large Squmous tumors (median) \nssGSEA Hallmark correlation to radITH FDR adjusted pval")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+```
+
+# Picking genes for Gene Expression Analysis
+- Mean and SD value based on entire cohort
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+mean_sd = data.frame(gene = as.character(rownames(tracerx_exp)),  mean=rowMeans(tracerx_exp),sd=matrixStats::rowSds(as.matrix(tracerx_exp)))
+m_sd = mean(mean_sd$sd)
+m_m = mean(mean_sd$mean)
+
+mean_sd$show = ""
+mean_sd$show = apply(mean_sd, 1, function(x) {
+  if(x["sd"] > 0.4006 & x["mean"] > 1.5789){
+    x["gene"]
+  } else {
+    NA
+  }
+})
+
+
+ggplot(mean_sd, aes (x = mean, y = sd, label=show) ) +
+  geom_point() + 
+  #geom_text(hjust=0, vjust=0) +
+  geom_hline(yintercept = m_sd) +
+  geom_vline(xintercept = m_m) +
+  theme_minimal()
+
+genes_for_analysis = mean_sd$show
+genes_for_analysis = c(na.omit(genes_for_analysis))
+cat("Number of Genes after cutoff: ", length(genes_for_analysis), "\n")
+```
+
+# Gene Expression Analysis (Squamous)
+- Genes that were picked for analysis were based on mean and SD (entire cohort) 
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+ids = pyrad %>% 
+  filter(pathology == "Squamous cell carcinoma") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+tmp_ge = tracerx_exp[genes_for_analysis,ids_to_take]
+tmp = pyrad %>% 
+  filter(sampleid %in% ids_to_take)
+
+df_res = data.frame()
+for(g in genes_for_analysis){
+  t = cor.test(unlist(tmp_ge[g,]), tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Squamous all samples: No significant corr after FDR")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+############# Squamous Large Tumors
+ids = pyrad %>% 
+  filter(pathology == "Squamous cell carcinoma",
+         volume_group_med == "High") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+tmp_ge = tracerx_exp[genes_for_analysis,ids_to_take]
+tmp = pyrad %>% 
+  filter(sampleid %in% ids_to_take)
+
+df_res = data.frame()
+for(g in genes_for_analysis){
+  t = cor.test(unlist(tmp_ge[g,]), tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Squamous Large Tumors: No significant corr after FDR")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+######### SMall TUmors
+ids = pyrad %>% 
+  filter(pathology == "Squamous cell carcinoma",
+         volume_group_med == "Low") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+tmp_ge = tracerx_exp[genes_for_analysis,ids_to_take]
+tmp = pyrad %>% 
+  filter(sampleid %in% ids_to_take)
+
+df_res = data.frame()
+for(g in genes_for_analysis){
+  t = cor.test(unlist(tmp_ge[g,]), tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.10) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Squamous Small Tumors: No significant corr after FDR")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+```
+
+# Gene Expression Analysis (Adeno)
+- Genes that were picked for analysis were based on mean and SD (entire cohort) 
+```{r}
+
+ids = pyrad %>% 
+  filter(pathology == "Invasive adenocarcinoma") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+tmp_ge = tracerx_exp[genes_for_analysis,ids_to_take]
+tmp = pyrad %>% 
+  filter(sampleid %in% ids_to_take)
+
+df_res = data.frame()
+for(g in genes_for_analysis){
+  t = cor.test(unlist(tmp_ge[g,]), tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Adeno all samples: No significant corr after FDR")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+############# Adeno Large Tumors
+ids = pyrad %>% 
+  filter(pathology == "Invasive adenocarcinoma",
+         volume_group_med == "High") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+tmp_ge = tracerx_exp[genes_for_analysis,ids_to_take]
+tmp = pyrad %>% 
+  filter(sampleid %in% ids_to_take)
+
+df_res = data.frame()
+for(g in genes_for_analysis){
+  t = cor.test(unlist(tmp_ge[g,]), tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Adeno Large Tumors(median): No significant corr after FDR")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+######### SMall TUmors
+ids = pyrad %>% 
+  filter(pathology == "Invasive adenocarcinoma",
+         volume_group_med == "Low") %>% 
+  select(sampleid) %>% 
+  unlist()
+ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+tmp_ge = tracerx_exp[genes_for_analysis,ids_to_take]
+tmp = pyrad %>% 
+  filter(sampleid %in% ids_to_take)
+
+df_res = data.frame()
+for(g in genes_for_analysis){
+  t = cor.test(unlist(tmp_ge[g,]), tmp[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+
+ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
+  geom_point() +
+  ggtitle("Adeno Small Tumors(median): No significant corr after FDR")+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
