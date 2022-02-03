@@ -86,6 +86,7 @@ minMax <- function(x){
   (x - min(x))/(max(x)-min(x))
 }
 
+features = features[-which(features == "original_shape_MeshVolume")]
 pyrad[,features] = apply(pyrad[,features], 2, minMax)
 features = features[-grepl("firstorder", features )]
 
@@ -112,8 +113,8 @@ features_of_interest = c(
   paste0(kernel ,"_glrlm_LongRunEmphasis"),
   paste0(kernel ,"_gldm_SmallDependenceEmphasis"),
   paste0(kernel ,"_glrlm_RunPercentage"),
-  paste0(kernel ,"_glszm_ZoneEntropy"),
-  paste0(kernel ,"_glrlm_RunEntropy")
+  #paste0(kernel ,"_glszm_ZoneEntropy"), 
+  #paste0(kernel ,"_glrlm_RunEntropy")
 )
 pyrad[,features_of_interest] = pyrad[,features_of_interest]
 pyrad$original_glrlm_LongRunEmphasis = -pyrad$original_glrlm_LongRunEmphasis
@@ -134,7 +135,7 @@ ggbiplot(pc, labels=rownames(pc)) +
 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
-pyrad$volume = as.numeric(pyrad$lesion1sizepath)
+pyrad$volume = as.numeric(pyrad$original_shape_MeshVolume)
 pyrad$volume_from_pyrad = as.numeric(pyrad$original_shape_MeshVolume)
 pyrad$diameter = as.numeric(pyrad$original_shape_Maximum2DDiameterSlice)
 
@@ -157,12 +158,6 @@ pyrad$radITH_group = gtools::quantcut(pyrad$radITH, q=Q, na.rm=TRUE)
 
 # Expected correlations
 - Negative cor radITH to volume \
-
-- Positive cor to ORACLE(not true) \
-
-- Volume and diameter are correlated to volume therefore we are probably not confunded by volume \
-
-- We would expect poz. cor. to Heterogenious but not mandatory since we do not know if radITH is the same as bioITH \
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -233,6 +228,7 @@ ggarrange(p1,p2,p3)
 Let's group DRIVER mutations by Sanchez Vega def \
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+pyrad$volume_group_med = ifelse(pyrad$volume <= median(pyrad$volume, na.rm = T), "Low", "High")
 
 vega = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/sanchez-vega-pws_1026.csv", sep = ";")
 muts = get(load("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/WES/patientMutTable_20200622.RData"))
@@ -300,7 +296,7 @@ for (col in unique(vega$Pathway)){
 
 # SanchezVega vs radITH groups (q = 3) vs pathology vs volume (Median)
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 
 for (i in c("High","Low")) {
@@ -316,7 +312,7 @@ for (i in c("High","Low")) {
       }
       df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
       
-      print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = col, y = -log10(adj_p_val))) +
+      print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = col, y = -log10(adj_p_val), color =col)) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median):",i))+
         ylab("-log10(Adj.P)")+
@@ -427,18 +423,20 @@ pyrad$volume_group_med = ifelse(pyrad$volume <= median(pyrad$volume, na.rm = T),
 pyrad$rad_group_med = ifelse(pyrad$radITH <= median(pyrad$radITH, na.rm = T), "Low", "High")
 pyrad$radith_volume_group = paste0("Volume: ",pyrad$volume_group_med, "- radITH: ",pyrad$rad_group_med )
 
-tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma")
+tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma",
+                       volume_group_med == "High")
 surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
 fit_os <- survfit(survplot::censor(surv_os, 5)~radith_volume_group, data = tmp)
 makeSurvPlot(fit_os, 
-             "Adeno", 
+             "Adeno Large Tumors", 
              legen_title = "Volume-radITH", 
              ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
-tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma")
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma",
+                       volume_group_med == "High")
 surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
 fit_os <- survfit(survplot::censor(surv_os, 5)~radith_volume_group, data = tmp)
 makeSurvPlot(fit_os, 
-             "Squamous", 
+             "Squamous Large tumors", 
              legen_title = "Volume-radITH", 
              ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c())
 tmp = pyrad %>% filter(!is.na(rad_group_med), !is.na(volume_group_med))
@@ -448,7 +446,23 @@ makeSurvPlot(fit_os,
              "All Data", 
              legen_title = "Volume-radITH", 
              ylab = "Lung spec. surv.",legend_coord = c(0.5,0.5),colors = c())
-
+# Small tumors
+tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma",
+                       volume_group_med == "Low")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radith_volume_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Adeno Small Tumors", 
+             legen_title = "Volume-radITH", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c()) 
+tmp = pyrad %>% filter(pathology == "Squamous cell carcinoma",
+                       volume_group_med == "Low")
+surv_os <- Surv(as.numeric(as.character(tmp[,'lung_specific_time']))/365, as.numeric(as.character(tmp[,'cens_lung_specific'])))
+fit_os <- survfit(survplot::censor(surv_os, 5)~radith_volume_group, data = tmp)
+makeSurvPlot(fit_os, 
+             "Squamous Small tumors", 
+             legen_title = "Volume-radITH", 
+             ylab = "Lung spec. surv.",legend_coord = c(0.2,0.5),colors = c())
 
 ```
 
@@ -529,10 +543,11 @@ for(hal in hall_cols){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.05), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+ggplot(df_res %>% filter(adj_p_val < 0.05), aes(x = t.estimate, y = -log10(adj_p_val), label = hal)) +
   geom_point() +
   ggtitle("All samples ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
-  ylab("-log10(Adj.P)")+
+  ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -563,10 +578,11 @@ for(hal in hall_cols){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p_val), label = hal)) +
   geom_point() +
   ggtitle("Adeno ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
-  ylab("-log10(Adj.P)")+
+  ylab("-log10(Adj.P)")+ xlab("Corr. Coef")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -594,10 +610,11 @@ for(hal in hall_cols){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p_val), label = hal)) +
   geom_point() +
   ggtitle("Squamous ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
-  ylab("-log10(Adj.P)")+
+  ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -628,10 +645,11 @@ for(hal in hall_cols){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p_val), label = hal)) +
   geom_point() +
   ggtitle("Large tumors(median) \nssGSEA Hallmark correlation to radITH FDR adjusted pval")+
-  ylab("-log10(Adj.P)")+
+  ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -656,10 +674,11 @@ for(hal in hall_cols){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p_val), label = hal)) +
   geom_point() +
   ggtitle("Small tumors (median) \nssGSEA Hallmark correlation to radITH FDR adjusted pval")+
-  ylab("-log10(Adj.P)")+
+  ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -693,10 +712,11 @@ for (i in c("High","Low")) {
       }
       df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
       
-      print(ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+      print(ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p_val), label = hal)) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median): ",i,"\nssGSEA Hallmark correlation to radITH FDR adjusted pval"))+
-        ylab("-log10(Adj.P)")+
+        ylab("-log10(Adj.P)")+ xlab("Corr coef.")+
+        geom_text(check_overlap=T,size =2) +
         theme_minimal() + 
         geom_hline(yintercept = -log10(0.05)) +
         theme(axis.text.x = element_text(angle = 90)))
@@ -762,11 +782,12 @@ for(g in genes_for_analysis){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.10) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g)) +
   geom_point() +
-  ggtitle("Squamous all samples: No significant corr after FDR")+
-  ylab("-log10(Adj.P)")+
+  ggtitle("Squamous all samples ")+
+  ylab("-log10(Adj.P)")+ xlab("Corr coef.")+
   theme_minimal() + 
+  geom_text(check_overlap=T,size =2) +
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
 
@@ -786,10 +807,11 @@ for(g in genes_for_analysis){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g)) +
   geom_point() +
-  ggtitle("Adeno all samples: No significant corr after FDR")+
-  ylab("-log10(Adj.P)")+
+  ggtitle("Adeno all samples")+
+  ylab("-log10(Adj.P)" )+ xlab("Corr coef.")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -827,10 +849,11 @@ for (i in c("High","Low")) {
       }
       df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
       
-      print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
+      print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(adj_p_val), label = g)) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median):",i))+
-        ylab("-log10(Adj.P)")+
+        geom_text(check_overlap=T,size =2) +
+        ylab("-log10(Adj.P)")+ xlab("Corr coef.")+
         theme_minimal() + 
         geom_hline(yintercept = -log10(0.05)) +
         theme(axis.text.x = element_text(angle = 90)))
@@ -858,10 +881,11 @@ for(g in c("wGII", "Telomeric.AI", "wFLOH", "lst","hrd", "total.til.score.danaha
   df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
 }
 
-print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g )) +
   geom_point() +
   ggtitle(paste0("Adeno all samples"))+
-  ylab("-log10(Adj.P)")+
+  ylab("-log10(Adj.P)")+  xlab("Corr coef.")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90)))
@@ -874,10 +898,11 @@ for(g in c("wGII", "Telomeric.AI", "wFLOH", "lst","hrd", "total.til.score.danaha
   df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
 }
 
-print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label =g )) +
   geom_point() +
   ggtitle(paste0("Squamous all samples"))+
-  ylab("-log10(Adj.P)")+
+  ylab("-log10(Adj.P)")+  xlab("Corr coef.")+
+  geom_text(check_overlap=T,size =2) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90)))
@@ -899,11 +924,12 @@ for (i in c("High","Low")) {
       }
 
       
-      print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+      print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g )) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median):",i))+
+        geom_text(check_overlap=T,size =2) +
         ylab("-log10(Adj.P)")+
-        theme_minimal() + 
+        theme_minimal() + xlab("Corr coef.")+
         geom_hline(yintercept = -log10(0.05)) +
         theme(axis.text.x = element_text(angle = 90)))
   }
