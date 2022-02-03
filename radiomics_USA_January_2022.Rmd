@@ -267,6 +267,7 @@ pyrad = merge(pyrad, results, by.y = "SampleID", by.x = "sampleid", all.x = T)
 
 # Let's test Sanchez Vega Muts vs radITH groups (q =3)
 
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 print("Adeno fisher test results")
 tmp = pyrad %>% filter(pathology == "Invasive adenocarcinoma")
@@ -794,13 +795,13 @@ for (i in c("High","Low")) {
       }
       df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
       
-      ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
+      print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median):",i))+
         ylab("-log10(Adj.P)")+
         theme_minimal() + 
         geom_hline(yintercept = -log10(0.05)) +
-        theme(axis.text.x = element_text(angle = 90))
+        theme(axis.text.x = element_text(angle = 90)))
       
   }}
 ```
