@@ -295,6 +295,37 @@ for (col in unique(vega$Pathway)){
 }
 
 
+
+```
+
+# SanchezVega vs radITH groups (q = 3) vs pathology vs volume (Median)
+
+```{r}
+
+
+for (i in c("High","Low")) {
+  for (j in c("Squamous cell carcinoma","Invasive adenocarcinoma" )){
+
+     tmp = pyrad %>% filter(pathology == j,volume_group_med == i) 
+     df_res = data.frame()
+     for (col in unique(vega$Pathway)){
+        if(length(unique(tmp[,col])) >= 2){
+          t = fisher.test(table(tmp$radITH_group, tmp[,col])) 
+          df_res = rbind(df_res, data.frame(col, t$p.value))
+        }
+      }
+      df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+      
+      print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = col, y = -log10(adj_p_val))) +
+        geom_point() +
+        ggtitle(paste0(j," ","Volume(median):",i))+
+        ylab("-log10(Adj.P)")+
+        theme_minimal() + 
+        geom_hline(yintercept = -log10(0.05)) +
+        theme(axis.text.x = element_text(angle = 90)))
+  }
+}
+
 ```
 
 
@@ -329,6 +360,7 @@ for (col in unique(vega$Pathway)){
     }
   }
 }
+
 
 ```
 
@@ -804,6 +836,79 @@ for (i in c("High","Low")) {
         theme(axis.text.x = element_text(angle = 90)))
       
   }}
+```
+
+# Chr Instability and TIL
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+cin = readRDS("/Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/computed_files/chr_instability.rds")
+
+cin$sampleid = unlist(lapply(cin$sample_id, function(x){ 
+  id = str_split(x, "_")[[1]][2]
+  id = paste0(substr(id, 0,3), "0", substr(id, 4,6))
+  id
+}))
+
+tmp = merge(pyrad, cin, by = "sampleid")
+
+tmp_ = tmp %>% 
+        filter(pathology == "Invasive adenocarcinoma") 
+df_res = data.frame()
+for(g in c("wGII", "Telomeric.AI", "wFLOH", "lst","hrd", "total.til.score.danahaer")){
+  t = cor.test(tmp_[,g], tmp_[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+
+print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+  geom_point() +
+  ggtitle(paste0("Adeno all samples"))+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90)))
+
+tmp_ = tmp %>% 
+        filter(pathology == "Squamous cell carcinoma") 
+df_res = data.frame()
+for(g in c("wGII", "Telomeric.AI", "wFLOH", "lst","hrd", "total.til.score.danahaer")){
+  t = cor.test(tmp_[,g], tmp_[,"radITH"])
+  df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+}
+
+print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+  geom_point() +
+  ggtitle(paste0("Squamous all samples"))+
+  ylab("-log10(Adj.P)")+
+  theme_minimal() + 
+  geom_hline(yintercept = -log10(0.05)) +
+  theme(axis.text.x = element_text(angle = 90)))
+
+
+
+# Volume vs pathology
+for (i in c("High","Low")) {
+  for (j in c("Squamous cell carcinoma","Invasive adenocarcinoma" )){
+
+      tmp_ = tmp %>% 
+        filter(pathology == j,
+               volume_group_med == i) 
+      
+      df_res = data.frame()
+      for(g in c("wGII", "Telomeric.AI", "wFLOH", "lst","hrd", "total.til.score.danahaer")){
+        t = cor.test(tmp_[,g], tmp_[,"radITH"])
+        df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+      }
+
+      
+      print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = g, y = -log10(t.p.value), color = t.estimate)) +
+        geom_point() +
+        ggtitle(paste0(j," ","Volume(median):",i))+
+        ylab("-log10(Adj.P)")+
+        theme_minimal() + 
+        geom_hline(yintercept = -log10(0.05)) +
+        theme(axis.text.x = element_text(angle = 90)))
+  }
+}
+
 ```
 
 
