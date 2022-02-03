@@ -601,10 +601,7 @@ ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), 
 
 - Large tumors seem to harbour association between radITH and biology \
 
-
 - Small tumors not significant hits \
-
-- Using wavelet kernel it was the opposite \
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -866,7 +863,7 @@ df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
 ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
   geom_point() +
-  ggtitle("Adeno Large Tumors(median): No significant corr after FDR")+
+  ggtitle("Adeno Large Tumors(median):")+
   ylab("-log10(Adj.P)")+
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
@@ -891,7 +888,7 @@ df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
 ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = g, y = -log10(adj_p_val), color = t.estimate)) +
   geom_point() +
-  ggtitle("Adeno Small Tumors(median): No significant corr after FDR")+
+  ggtitle("Adeno Small Tumors(median)")+
   ylab("-log10(Adj.P)")+
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
