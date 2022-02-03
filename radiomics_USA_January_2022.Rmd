@@ -661,13 +661,13 @@ for (i in c("High","Low")) {
       }
       df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
       
-      ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
+      print(ggplot(df_res %>% filter(adj_p_val < 0.10), aes(x = hal, y = -log10(adj_p_val), color = t.estimate)) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median): ",i,"\nssGSEA Hallmark correlation to radITH FDR adjusted pval"))+
         ylab("-log10(Adj.P)")+
         theme_minimal() + 
         geom_hline(yintercept = -log10(0.05)) +
-        theme(axis.text.x = element_text(angle = 90))
+        theme(axis.text.x = element_text(angle = 90)))
           
   }
 }
