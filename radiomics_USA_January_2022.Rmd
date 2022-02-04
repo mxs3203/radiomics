@@ -1,8 +1,8 @@
 ---
 title: "Radiomics"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 editor_options:
   chunk_output_type: console
 ---
@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 library(readxl)
+library(ggrepel)
 library(pheatmap)
 library(factoextra)
 library(cluster)
@@ -86,9 +87,6 @@ minMax <- function(x){
   (x - min(x))/(max(x)-min(x))
 }
 
-features = features[-which(features == "original_shape_MeshVolume")]
-pyrad[,features] = apply(pyrad[,features], 2, minMax)
-features = features[-grepl("firstorder", features )]
 
 ```
 # Project Plan
@@ -103,6 +101,10 @@ features = features[-grepl("firstorder", features )]
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+features = features[-which(features == "original_shape_MeshVolume")]
+features = features[-grepl("firstorder", features )]
+
 #wavelet.LLL
 kernel = "original"
 features_of_interest = c(
@@ -113,11 +115,14 @@ features_of_interest = c(
   paste0(kernel ,"_glrlm_LongRunEmphasis"),
   paste0(kernel ,"_gldm_SmallDependenceEmphasis"),
   paste0(kernel ,"_glrlm_RunPercentage"),
-  #paste0(kernel ,"_glszm_ZoneEntropy"), 
-  #paste0(kernel ,"_glrlm_RunEntropy")
+  paste0(kernel ,"_glszm_ZoneEntropy"), # the only one pos cor to volume, so we div with volume
+  paste0(kernel ,"_glrlm_RunEntropy")
 )
 pyrad[,features_of_interest] = pyrad[,features_of_interest]
-pyrad$original_glrlm_LongRunEmphasis = -pyrad$original_glrlm_LongRunEmphasis
+pyrad[,paste0(kernel, "_glrlm_LongRunEmphasis")]= -pyrad[,paste0(kernel, "_glrlm_LongRunEmphasis")]
+pyrad[,paste0(kernel, "_glszm_ZoneEntropy")]= pyrad[,paste0(kernel, "_glszm_ZoneEntropy")]/pyrad[,"original_shape_MeshVolume"]
+
+pyrad[,features_of_interest] = apply(pyrad[,features_of_interest], 2, minMax)
 
 pheatmap(cor(pyrad[,features_of_interest]), 
          fontsize = 8)
@@ -146,8 +151,14 @@ pyrad$diameter = as.numeric(pyrad$original_shape_Maximum2DDiameterSlice)
 - Numbers were a bit wierd when divided by volume therefore I did not divide anything with volume \
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# weighted mean 
+w = 1-abs(cor(pyrad[,features_of_interest], pyrad[,"volume"]))
+pyrad$radITH = apply(pyrad[,features_of_interest],1, function(x){
+   weighted.mean(x[features_of_interest], w = w)
+})
 
-pyrad$radITH = rowMeans(pyrad[,features_of_interest], na.rm = T)
+
+#pyrad$radITH = rowMeans(pyrad[,features_of_interest], na.rm = T)
 Q = 3
 
 
@@ -547,7 +558,8 @@ ggplot(df_res %>% filter(adj_p_val < 0.05), aes(x = t.estimate, y = -log10(adj_p
   geom_point() +
   ggtitle("All samples ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
   ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=hal), size = 2) + 
+  xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -582,7 +594,8 @@ ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p
   geom_point() +
   ggtitle("Adeno ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
   ylab("-log10(Adj.P)")+ xlab("Corr. Coef")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=hal), size = 2) + 
+  xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -614,7 +627,8 @@ ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p
   geom_point() +
   ggtitle("Squamous ssGSEA Hallmark correlation to radITH FDR adjusted pval")+
   ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=hal), size = 2) + 
+  xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -649,7 +663,8 @@ ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p
   geom_point() +
   ggtitle("Large tumors(median) \nssGSEA Hallmark correlation to radITH FDR adjusted pval")+
   ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=hal), size = 2) + 
+  xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -678,7 +693,8 @@ ggplot(df_res %>% filter(adj_p_val < 0.06), aes(x = t.estimate, y = -log10(adj_p
   geom_point() +
   ggtitle("Small tumors (median) \nssGSEA Hallmark correlation to radITH FDR adjusted pval")+
   ylab("-log10(Adj.P)")+xlab("Corr. Coef")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=hal), size = 2) + 
+  xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -716,7 +732,8 @@ for (i in c("High","Low")) {
         geom_point() +
         ggtitle(paste0(j," ","Volume(median): ",i,"\nssGSEA Hallmark correlation to radITH FDR adjusted pval"))+
         ylab("-log10(Adj.P)")+ xlab("Corr coef.")+
-        geom_text(check_overlap=T,size =2) +
+        geom_text_repel( aes(label=hal), size = 2) + 
+          xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
         theme_minimal() + 
         geom_hline(yintercept = -log10(0.05)) +
         theme(axis.text.x = element_text(angle = 90)))
@@ -782,12 +799,13 @@ for(g in genes_for_analysis){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(adj_p_val), label = g)) +
   geom_point() +
   ggtitle("Squamous all samples ")+
   ylab("-log10(Adj.P)")+ xlab("Corr coef.")+
   theme_minimal() + 
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=g), size = 2) + 
+  xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
 
@@ -807,11 +825,12 @@ for(g in genes_for_analysis){
 }
 df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
 
-ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g)) +
+ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(adj_p_val), label = g)) +
   geom_point() +
   ggtitle("Adeno all samples")+
   ylab("-log10(Adj.P)" )+ xlab("Corr coef.")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=g), size = 2) + 
+  xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90))
@@ -852,8 +871,9 @@ for (i in c("High","Low")) {
       print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(adj_p_val), label = g)) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median):",i))+
-        geom_text(check_overlap=T,size =2) +
+        geom_text_repel( aes(label=g), size = 2) + 
         ylab("-log10(Adj.P)")+ xlab("Corr coef.")+
+          xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
         theme_minimal() + 
         geom_hline(yintercept = -log10(0.05)) +
         theme(axis.text.x = element_text(angle = 90)))
@@ -881,11 +901,12 @@ for(g in c("wGII", "Telomeric.AI", "wFLOH", "lst","hrd", "total.til.score.danaha
   df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
 }
 
-print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g )) +
+print(ggplot(df_res , aes(x = t.estimate, y = -log10(t.p.value), label = g )) +
   geom_point() +
   ggtitle(paste0("Adeno all samples"))+
   ylab("-log10(Adj.P)")+  xlab("Corr coef.")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=g), size = 2) + 
+    xlim(-1,1) + ylim(0, max(-log10(df_res$t.p.value) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90)))
@@ -898,11 +919,12 @@ for(g in c("wGII", "Telomeric.AI", "wFLOH", "lst","hrd", "total.til.score.danaha
   df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
 }
 
-print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label =g )) +
+print(ggplot(df_res  , aes(x = t.estimate, y = -log10(t.p.value), label =g )) +
   geom_point() +
   ggtitle(paste0("Squamous all samples"))+
   ylab("-log10(Adj.P)")+  xlab("Corr coef.")+
-  geom_text(check_overlap=T,size =2) +
+  geom_text_repel( aes(label=g), size = 2) + 
+    xlim(-1,1) + ylim(0, max(-log10(df_res$t.p.value) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90)))
@@ -924,11 +946,12 @@ for (i in c("High","Low")) {
       }
 
       
-      print(ggplot(df_res %>% filter(t.p.value < 0.06) , aes(x = t.estimate, y = -log10(t.p.value), label = g )) +
+      print(ggplot(df_res , aes(x = t.estimate, y = -log10(t.p.value), label = g )) +
         geom_point() +
         ggtitle(paste0(j," ","Volume(median):",i))+
-        geom_text(check_overlap=T,size =2) +
+        geom_text_repel( aes(label=g), size = 2) + 
         ylab("-log10(Adj.P)")+
+          xlim(-1,1) + ylim(0, max(-log10(df_res$t.p.value) + 0.5)) +
         theme_minimal() + xlab("Corr coef.")+
         geom_hline(yintercept = -log10(0.05)) +
         theme(axis.text.x = element_text(angle = 90)))
