@@ -48,7 +48,7 @@ clin_$ID = rownames(clin_)
 clin_$Lesion1SizePath = as.numeric(as.character(clin_$Lesion1SizePath))
 clin = read_excel("~/Downloads/TRACERx all patients- July 2020 version 2.xlsx")
 clin$ID = paste0(substr(clin$Shorter_ID,0,3), "0",substr(clin$Shorter_ID,4, 8))
-pyrad = read_excel("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Radiomics/Radiomics20200801/PyRadiomics_20200718/original.xlsx")
+pyrad = read_excel("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Radiomics/Radiomics20200801/PyRadiomics_20200718/wavelet.xlsx")
 pyrad$pathology = case_when(
   pyrad$pathhistr_tracerx_lesion1form == "Invasive adenocarcinoma" ~ "Invasive adenocarcinoma",
   pyrad$pathhistr_tracerx_lesion1form == "Squamous cell carcinoma" ~ "Squamous cell carcinoma",
@@ -106,7 +106,7 @@ features = features[-which(features == "original_shape_MeshVolume")]
 features = features[-grepl("firstorder", features )]
 
 #wavelet.LLL
-kernel = "original"
+kernel = "wavelet.LLL"
 features_of_interest = c(
   paste0(kernel ,"_glcm_JointEntropy"),
   paste0(kernel ,"_glcm_DifferenceEntropy"),
