@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.8.18)  3 FEB 2022 20:53
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.8.18)  4 FEB 2022 12:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -457,7 +457,7 @@ LaTeX Font Info:    Trying to load font information for U+msb on input line 113
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 </Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/NMF_Radi
-omics/Radiomics.png, id=100, 461.17294pt x 695.59875pt>
+omics/Radiomics.png, id=120, 461.17294pt x 695.59875pt>
 File: /Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/NMF
 _Radiomics/Radiomics.png Graphic file (type png)
 <use /Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/NMF_
@@ -482,7 +482,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 131--132
 
  []
 
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-2-1.pdf, id=101, 4
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-2-1.pdf, id=121, 4
 66.74374pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-2-1.pdf Graph
 ic file (type pdf)
@@ -490,7 +490,7 @@ ic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-2-1.pdf  used on input line 134.
 (pdftex.def)             Requested size: 466.76396pt x 316.19493pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-2-2.pdf, id=102, 2
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-2-2.pdf, id=122, 2
 21.82875pt x 304.13625pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-2-2.pdf Graph
 ic file (type pdf)
@@ -535,7 +535,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 188--189
 
  []
 
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-5-1.pdf, id=139, 4
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-5-1.pdf, id=159, 4
 65.74pt x 313.17pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-5-1.pdf Graph
 ic file (type pdf)
@@ -543,7 +543,7 @@ ic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-5-1.pdf  used on input line 191.
 (pdftex.def)             Requested size: 465.75307pt x 313.17877pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-5-2.pdf, id=140, 4
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-5-2.pdf, id=160, 4
 59.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-5-2.pdf Graph
 ic file (type pdf)
@@ -562,7 +562,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 196--197
  []
 
 [5 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-5-2.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-1.pdf, id=171, 4
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-1.pdf, id=191, 4
 59.7175pt x 313.17pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-1.pdf Graph
 ic file (type pdf)
@@ -570,7 +570,7 @@ ic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-8-1.pdf  used on input line 230.
 (pdftex.def)             Requested size: 459.7304pt x 313.17877pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-2.pdf, id=172, 4
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-2.pdf, id=192, 4
 53.695pt x 313.17pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-2.pdf Graph
 ic file (type pdf)
@@ -578,7 +578,7 @@ ic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-8-2.pdf  used on input line 231.
 (pdftex.def)             Requested size: 453.6939pt x 313.16922pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-3.pdf, id=173, 4
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-3.pdf, id=193, 4
 59.7175pt x 313.17pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-3.pdf Graph
 ic file (type pdf)
@@ -586,7 +586,7 @@ ic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-8-3.pdf  used on input line 232.
 (pdftex.def)             Requested size: 459.7304pt x 313.17877pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-4.pdf, id=174, 4
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-4.pdf, id=194, 4
 59.7175pt x 313.17pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-8-4.pdf Graph
 ic file (type pdf)
@@ -624,7 +624,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 243--244
 
  []
 
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-1.pdf, id=216, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-1.pdf, id=236, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-1.pdf Grap
 hic file (type pdf)
@@ -632,7 +632,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-10-1.pdf  used on input line 257.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-2.pdf, id=217, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-2.pdf, id=237, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-2.pdf Grap
 hic file (type pdf)
@@ -640,7 +640,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-10-2.pdf  used on input line 258.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-3.pdf, id=218, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-3.pdf, id=238, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-3.pdf Grap
 hic file (type pdf)
@@ -663,7 +663,7 @@ Overfull \vbox (8.84322pt too high) has occurred while \output is active []
 
 [10 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-1.pdf> <.
 /radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-10-2.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-1.pdf, id=249, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-1.pdf, id=269, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-1.pdf Grap
 hic file (type pdf)
@@ -671,7 +671,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-11-1.pdf  used on input line 264.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-2.pdf, id=250, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-2.pdf, id=270, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-2.pdf Grap
 hic file (type pdf)
@@ -679,7 +679,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-11-2.pdf  used on input line 265.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-3.pdf, id=251, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-3.pdf, id=271, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-11-3.pdf Grap
 hic file (type pdf)
@@ -706,7 +706,7 @@ Overfull \vbox (13.2432pt too high) has occurred while \output is active []
 Package hyperref Warning: Difference (2) between bookmark levels is greater 
 (hyperref)                than one, level fixed on input line 273.
 
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-1.pdf, id=293, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-1.pdf, id=314, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-1.pdf Grap
 hic file (type pdf)
@@ -714,7 +714,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-12-1.pdf  used on input line 275.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-2.pdf, id=294, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-2.pdf, id=315, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-2.pdf Grap
 hic file (type pdf)
@@ -722,7 +722,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-12-2.pdf  used on input line 276.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-3.pdf, id=295, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-3.pdf, id=316, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-3.pdf Grap
 hic file (type pdf)
@@ -730,7 +730,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-12-3.pdf  used on input line 277.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-4.pdf, id=296, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-4.pdf, id=317, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-4.pdf Grap
 hic file (type pdf)
@@ -738,7 +738,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-12-4.pdf  used on input line 278.
 (pdftex.def)             Requested size: 463.73842pt x 316.18529pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-5.pdf, id=297, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-5.pdf, id=318, 
 463.7325pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-12-5.pdf Grap
 hic file (type pdf)
@@ -777,7 +777,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 286--287
 
  []
 
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-13-1.pdf, id=368, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-13-1.pdf, id=388, 
 440.64626pt x 312.16624pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-13-1.pdf Grap
 hic file (type pdf)
@@ -800,7 +800,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 300--301
 
  []
 
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-14-1.pdf, id=384, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-14-1.pdf, id=404, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-14-1.pdf Grap
 hic file (type pdf)
@@ -809,7 +809,7 @@ Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-14-1.pdf  used on input line 303.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
 [17 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-13-1.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-15-1.pdf, id=396, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-15-1.pdf, id=416, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-15-1.pdf Grap
 hic file (type pdf)
@@ -818,7 +818,7 @@ Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-15-1.pdf  used on input line 307.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
 [18 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-14-1.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-16-1.pdf, id=408, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-16-1.pdf, id=428, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-16-1.pdf Grap
 hic file (type pdf)
@@ -827,7 +827,7 @@ Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-16-1.pdf  used on input line 311.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
 [19 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-15-1.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-1.pdf, id=421, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-1.pdf, id=441, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-1.pdf Grap
 hic file (type pdf)
@@ -835,7 +835,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-17-1.pdf  used on input line 317.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-2.pdf, id=422, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-2.pdf, id=442, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-2.pdf Grap
 hic file (type pdf)
@@ -853,7 +853,7 @@ Overfull \vbox (30.47214pt too high) has occurred while \output is active []
 
 [21 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-1.pdf> <.
 /radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-17-2.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-1.pdf, id=453, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-1.pdf, id=473, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-1.pdf Grap
 hic file (type pdf)
@@ -861,7 +861,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-18-1.pdf  used on input line 323.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-2.pdf, id=454, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-2.pdf, id=474, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-2.pdf Grap
 hic file (type pdf)
@@ -869,7 +869,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-18-2.pdf  used on input line 324.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-3.pdf, id=455, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-3.pdf, id=475, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-3.pdf Grap
 hic file (type pdf)
@@ -877,7 +877,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-18-3.pdf  used on input line 325.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-4.pdf, id=456, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-4.pdf, id=476, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-4.pdf Grap
 hic file (type pdf)
@@ -911,7 +911,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 334--335
 
 [23 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-3.pdf> <.
 /radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-18-4.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-19-1.pdf, id=493, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-19-1.pdf, id=513, 
 459.7175pt x 313.17pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-19-1.pdf Grap
 hic file (type pdf)
@@ -924,7 +924,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 349--351
 
  []
 
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-1.pdf, id=494, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-1.pdf, id=514, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-1.pdf Grap
 hic file (type pdf)
@@ -932,7 +932,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-20-1.pdf  used on input line 353.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-2.pdf, id=495, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-2.pdf, id=515, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-2.pdf Grap
 hic file (type pdf)
@@ -952,7 +952,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 362--364
 
 [25 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-1.pdf> <.
 /radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-20-2.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-1.pdf, id=526, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-1.pdf, id=546, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-1.pdf Grap
 hic file (type pdf)
@@ -960,7 +960,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-21-1.pdf  used on input line 366.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-2.pdf, id=527, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-2.pdf, id=547, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-2.pdf Grap
 hic file (type pdf)
@@ -968,7 +968,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-21-2.pdf  used on input line 367.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-3.pdf, id=528, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-3.pdf, id=548, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-3.pdf Grap
 hic file (type pdf)
@@ -976,7 +976,7 @@ hic file (type pdf)
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
 chunk-21-3.pdf  used on input line 368.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-4.pdf, id=529, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-4.pdf, id=549, 
 459.7175pt x 316.18124pt>
 File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-4.pdf Grap
 hic file (type pdf)
@@ -1002,106 +1002,254 @@ Underfull \hbox (badness 10000) in paragraph at lines 366--370
 [26 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-1.pdf>] [
 27 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-2.pdf> <./
 radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-3.pdf>]
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-1.pdf, id=559, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-1.pdf, id=579, 
 459.7175pt x 316.18124pt>
-File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-1.pdf Grap
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-1.pdf Grap
 hic file (type pdf)
-<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-1.pdf>
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-1.pdf>
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
-chunk-22-1.pdf  used on input line 373.
+chunk-23-1.pdf  used on input line 377.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-2.pdf, id=560, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-2.pdf, id=580, 
 459.7175pt x 316.18124pt>
-File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-2.pdf Grap
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-2.pdf Grap
 hic file (type pdf)
-<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-2.pdf>
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-2.pdf>
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
-chunk-22-2.pdf  used on input line 374.
+chunk-23-2.pdf  used on input line 378.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-3.pdf, id=561, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-3.pdf, id=581, 
 459.7175pt x 316.18124pt>
-File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-3.pdf Grap
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-3.pdf Grap
 hic file (type pdf)
-<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-3.pdf>
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-3.pdf>
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
-chunk-22-3.pdf  used on input line 375.
+chunk-23-3.pdf  used on input line 379.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-4.pdf, id=562, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-4.pdf, id=582, 
 459.7175pt x 316.18124pt>
-File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-4.pdf Grap
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-4.pdf Grap
 hic file (type pdf)
-<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-4.pdf>
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-4.pdf>
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
-chunk-22-4.pdf  used on input line 376.
+chunk-23-4.pdf  used on input line 380.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-5.pdf, id=563, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-5.pdf, id=583, 
 459.7175pt x 316.18124pt>
-File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-5.pdf Grap
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-5.pdf Grap
 hic file (type pdf)
-<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-5.pdf>
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-5.pdf>
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
-chunk-22-5.pdf  used on input line 377.
+chunk-23-5.pdf  used on input line 381.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
-<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-6.pdf, id=564, 
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-6.pdf, id=584, 
 459.7175pt x 316.18124pt>
-File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-6.pdf Grap
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-6.pdf Grap
 hic file (type pdf)
-<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-6.pdf>
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-6.pdf>
 Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
-chunk-22-6.pdf  used on input line 378.
+chunk-23-6.pdf  used on input line 382.
 (pdftex.def)             Requested size: 459.74442pt x 316.19975pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 373--379
+Underfull \hbox (badness 10000) in paragraph at lines 377--383
 []
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 373--379
+Underfull \hbox (badness 10000) in paragraph at lines 377--383
 []
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 373--379
+Underfull \hbox (badness 10000) in paragraph at lines 377--383
 []
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 373--379
+Underfull \hbox (badness 10000) in paragraph at lines 377--383
 []
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 373--379
+Underfull \hbox (badness 10000) in paragraph at lines 377--383
 []
  []
 
 [28 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-21-4.pdf>]
-Overfull \vbox (11.67213pt too high) has occurred while \output is active []
+Overfull \vbox (62.57478pt too high) has occurred while \output is active []
 
-[29 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-1.pdf> <.
-/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-2.pdf>] [30 <./
-radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-3.pdf> <./radiom
-ics_USA_January_2022_files/figure-latex/unnamed-chunk-22-4.pdf>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 380.
-[31 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-5.pdf> <.
-/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-22-6.pdf>]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 380.
+[29 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-1.pdf> <.
+/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-2.pdf>] [30 <./
+radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-3.pdf> <./radiom
+ics_USA_January_2022_files/figure-latex/unnamed-chunk-23-4.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 390--393
+
+ []
+
+[31 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-5.pdf> <.
+/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-23-6.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 393--396
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 396--398
+
+ []
+
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-1.pdf, id=652, 
+464.73625pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-1.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-1.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-24-1.pdf  used on input line 420.
+(pdftex.def)             Requested size: 464.74219pt x 320.20033pt.
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-2.pdf, id=653, 
+462.72874pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-2.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-2.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-24-2.pdf  used on input line 421.
+(pdftex.def)             Requested size: 462.73466pt x 320.20033pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 420--422
+[][]
+ []
+
+[32]
+Underfull \hbox (badness 10000) in paragraph at lines 429--432
+
+ []
+
+[33 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-1.pdf> <.
+/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-24-2.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 432--434
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 434--436
+
+ []
+
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-1.pdf, id=676, 
+464.73625pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-1.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-1.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-25-1.pdf  used on input line 458.
+(pdftex.def)             Requested size: 464.74219pt x 320.20033pt.
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-2.pdf, id=677, 
+462.72874pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-2.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-2.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-25-2.pdf  used on input line 459.
+(pdftex.def)             Requested size: 462.73466pt x 320.20033pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 458--460
+[][]
+ []
+
+[34]
+Underfull \hbox (badness 10000) in paragraph at lines 467--470
+
+ []
+
+[35 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-1.pdf> <.
+/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-25-2.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 470--472
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 472--474
+
+ []
+
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-1.pdf, id=700, 
+464.73625pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-1.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-1.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-26-1.pdf  used on input line 496.
+(pdftex.def)             Requested size: 464.74219pt x 320.20033pt.
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-2.pdf, id=701, 
+462.72874pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-2.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-2.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-26-2.pdf  used on input line 497.
+(pdftex.def)             Requested size: 462.73466pt x 320.20033pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 496--498
+[][]
+ []
+
+[36]
+Underfull \hbox (badness 10000) in paragraph at lines 505--508
+
+ []
+
+[37 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-1.pdf> <.
+/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-26-2.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 508--510
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 510--512
+
+ []
+
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-1.pdf, id=725, 
+464.73625pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-1.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-1.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-27-1.pdf  used on input line 534.
+(pdftex.def)             Requested size: 464.74219pt x 320.20033pt.
+<radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-2.pdf, id=726, 
+462.72874pt x 320.19624pt>
+File: radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-2.pdf Grap
+hic file (type pdf)
+<use radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-2.pdf>
+Package pdftex.def Info: radiomics_USA_January_2022_files/figure-latex/unnamed-
+chunk-27-2.pdf  used on input line 535.
+(pdftex.def)             Requested size: 462.73466pt x 320.20033pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 534--536
+[][]
+ []
+
+[38]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 537.
+[39 <./radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-1.pdf> <.
+/radiomics_USA_January_2022_files/figure-latex/unnamed-chunk-27-2.pdf>]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 537.
 (./radiomics_USA_January_2022.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 380.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 380.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 537.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 537.
 Package rerunfilecheck Info: File `radiomics_USA_January_2022.out' has not chan
 ged.
-(rerunfilecheck)             Checksum: 5E6DA901834392C4D6640D58D8657CD9;5761.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 380.
+(rerunfilecheck)             Checksum: 496C15AE4E929654975542870894C393;7781.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 537.
  ) 
 Here is how much of TeX's memory you used:
- 10844 strings out of 482841
- 171314 string characters out of 5952941
- 395003 words of memory out of 5000000
- 25926 multiletter control sequences out of 15000+600000
+ 10915 strings out of 482841
+ 175057 string characters out of 5952941
+ 395453 words of memory out of 5000000
+ 25976 multiletter control sequences out of 15000+600000
  566665 words of font info for 55 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 43i,6n,37p,545b,459s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 43i,6n,37p,561b,459s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/Users/au589901/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/Us
 ers/au589901/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}</Users/a
 u589901/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/au5
@@ -1111,10 +1259,10 @@ u589901/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/au5
 brary/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb></Users/au589901/Libr
 ary/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></Users/au589901/Librar
 y/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtti10.pfb>
-Output written on radiomics_USA_January_2022.pdf (31 pages, 2113100 bytes).
+Output written on radiomics_USA_January_2022.pdf (39 pages, 2274443 bytes).
 PDF statistics:
- 675 PDF objects out of 1000 (max. 8388607)
- 501 compressed objects within 6 object streams
- 57 named destinations out of 1000 (max. 500000)
- 408 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 796 PDF objects out of 1000 (max. 8388607)
+ 590 compressed objects within 6 object streams
+ 70 named destinations out of 1000 (max. 500000)
+ 488 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -127,7 +127,7 @@ pyrad[,features_of_interest] = apply(pyrad[,features_of_interest], 2, minMax)
 pheatmap(cor(pyrad[,features_of_interest]), 
          fontsize = 8)
 
-pc = prcomp(pyrad[,features_of_interest],center = T, scale = T)
+pc = prcomp(pyrad[,features_of_interest],center = T)
 ggbiplot(pc, labels=rownames(pc)) + 
   theme_pubclean()
 
@@ -256,9 +256,9 @@ for (sample in unique(muts$SampleID)){
   for (geneGroup in unique(vega$Pathway_pretty)) {
     vega_group = vega %>% filter(Pathway_pretty == geneGroup) 
     if (any(vega_group$Gene %in% tmp_muts$Hugo_Symbol == T)) {
-      have_path_mut = c(have_path_mut, 1)
+      have_path_mut = c(have_path_mut, T)
     } else {
-      have_path_mut = c(have_path_mut, 0)
+      have_path_mut = c(have_path_mut, F)
     }
   }
   results = rbind(results, have_path_mut)
@@ -767,7 +767,6 @@ mean_sd$show = apply(mean_sd, 1, function(x) {
 
 ggplot(mean_sd, aes (x = mean, y = sd, label=show) ) +
   geom_point() + 
-  #geom_text(hjust=0, vjust=0) +
   geom_hline(yintercept = m_sd) +
   geom_vline(xintercept = m_m) +
   theme_minimal()
@@ -840,7 +839,7 @@ ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(adj_
 
 ```
 
-# Gene Expression Analysis by volume group and cancer type
+# Gene Expression Analysis by volume group and cancer type (CORRELATION)
 
 - Genes that were picked for analysis were based on mean and SD (entire cohort) \
 
@@ -880,6 +879,48 @@ for (i in c("High","Low")) {
       
   }}
 ```
+
+# Gene Expression Analysis by volume group and cancer type and radITH group (T-TEST)
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+
+
+for (i in as.character(unique(pyrad$radith_volume_group))){
+    for (j in c("Squamous cell carcinoma","Invasive adenocarcinoma" )){
+  
+        ids = pyrad %>% 
+          filter(pathology == j,
+                 radith_volume_group == i) %>% 
+          select(sampleid) %>% 
+          unlist()
+        ids_to_take = ids[ids %in% colnames(tracerx_exp)]
+        tmp_ge = tracerx_exp[genes_for_analysis,ids_to_take]
+        tmp = pyrad %>% 
+          filter(sampleid %in% ids_to_take)
+        
+        df_res = data.frame()
+        for(g in genes_for_analysis){
+          tmp_ge[g,]
+          t = cor.test(unlist(tmp_ge[g,]), tmp[,"radITH"])
+          df_res = rbind(df_res, data.frame(g,t$estimate, t$p.value))
+        }
+        df_res$adj_p_val = p.adjust(df_res$t.p.value, method = "fdr")
+        
+        print(ggplot(df_res %>% filter(adj_p_val < 0.06) , aes(x = t.estimate, y = -log10(adj_p_val), label = g)) +
+          geom_point() +
+          ggtitle(paste0(j," ","Volume(median):",i))+
+          geom_text_repel( aes(label=g), size = 2) + 
+          ylab("-log10(Adj.P)")+ xlab("Corr coef.")+
+            xlim(-1,1) + ylim(0, max(-log10(df_res$adj_p_val) + 0.5)) +
+          theme_minimal() + 
+          geom_hline(yintercept = -log10(0.05)) +
+          theme(axis.text.x = element_text(angle = 90)))
+        
+    }
+}
+
+```
+
 
 # Chr Instability and TIL
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -924,7 +965,7 @@ print(ggplot(df_res  , aes(x = t.estimate, y = -log10(t.p.value), label =g )) +
   ggtitle(paste0("Squamous all samples"))+
   ylab("-log10(Adj.P)")+  xlab("Corr coef.")+
   geom_text_repel( aes(label=g), size = 2) + 
-    xlim(-1,1) + ylim(0, max(-log10(df_res$t.p.value) + 0.5)) +
+  xlim(-1,1) + ylim(0, max(-log10(df_res$t.p.value) + 0.5)) +
   theme_minimal() + 
   geom_hline(yintercept = -log10(0.05)) +
   theme(axis.text.x = element_text(angle = 90)))
@@ -959,5 +1000,316 @@ for (i in c("High","Low")) {
 }
 
 ```
+
+# Can we use pyrad features to predict biological features?
+
+- As it does not make sense to split small amount of observations by pathology I will include pathology as parameter in the model \
+
+- IMPORTANT! Params in model: chosen pyRad features, pathology, radITH and volume \
+
+- The results represent Logistic regression with 3-fold (5 times repeated) CV using R-Caret package \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(caret)
+library(visreg)  ## For visualizing regression models
+library(plotROC) ## For constructing ROC curves
+library(mgcv)    ## For fitting GAM models
+library(glmnet)  ## For fitting regularized models
+
+cin_measures = c(cin_measures,"hrd_score")
+vega_muts = c(as.character(unique(vega$Pathway)))
+tmp = pyrad
+tmp$pathology = as.factor(tmp$pathology)
+fit.control <- trainControl(method = "repeatedcv", 
+                            number = 3, repeats = 5, 
+                            classProbs = TRUE)
+
+for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+    #print(par)
+    response =  par
+    if (response %in% vega_muts){
+       tmp$response = as.factor(tmp[,response])
+       tmp_ = tmp[complete.cases(tmp[,response]),]
+       tmp_[,"response"] = make.names(tmp_[,"response"])
+    } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
+        tmp_ = merge(tmp, cin, by = "sampleid")
+        tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
+        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    } else {
+       tmp_ = tmp
+       tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    }
+    # , paste(features_of_interest, collapse="+"))
+    fit <- train(as.formula(paste("response~pathology+radITH+volume+", paste(features_of_interest, collapse="+"))), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
+    
+    summary(fit$finalModel)
+    
+    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+    p = ggplot(df, aes(d = response_var, m = Prob)) + 
+      geom_roc() +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=8))
+    auc = calc_auc(p)[3][[1]]
+    assign(p + ggtitle(paste0("Binary ",response," AUC: ",round(auc,4))), x = par)
+}
+
+ggarrange(rtk_kras,nrf2, pi3k, tgfb,p53,cell_cycle, wnt, myc, hippo, notch)
+ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danahaer)
+
+```
+
+# Can we use radITH and pyRad Features for the same results?
+
+- As it does not make sense to split small amount of observations by pathology I will include pathology as parameter in the model \
+
+- IMPORTANT! Params in model: chosen pyRad features, pathology, radITH \
+
+- The results represent Logistic regression with 3-fold (5 time repeated) CV using R-Caret package \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+vega_muts = c(as.character(unique(vega$Pathway)))
+tmp = pyrad
+tmp$pathology = as.factor(tmp$pathology)
+fit.control <- trainControl(method = "repeatedcv", 
+                            number = 3, repeats = 5, 
+                            classProbs = TRUE)
+
+for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+    print(par)
+    response =  par
+    if (response %in% vega_muts){
+       tmp$response = as.factor(tmp[,response])
+       tmp_ = tmp[complete.cases(tmp[,response]),]
+       tmp_[,"response"] = make.names(tmp_[,"response"])
+    } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
+        tmp_ = merge(tmp, cin, by = "sampleid")
+        tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
+        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    } else {
+       tmp_ = tmp
+       tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    }
+    # , paste(features_of_interest, collapse="+"))
+    fit <- train(as.formula(paste("response~pathology+radITH+", paste(features_of_interest, collapse="+"))), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
+    
+    summary(fit$finalModel)
+    
+    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+    p = ggplot(df, aes(d = response_var, m = Prob)) + 
+      geom_roc() +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=8))
+    auc = calc_auc(p)[3][[1]]
+    assign(p + ggtitle(paste0("Binary ",response," AUC: ",round(auc,4))), x = par)
+}
+
+ggarrange(rtk_kras,nrf2, pi3k, tgfb,p53,cell_cycle, wnt, myc, hippo, notch)
+ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danahaer)
+
+```
+
+
+# Can we use only volume and Patholgy for the same results?
+
+- As it does not make sense to split small amount of observations by pathology I will include pathology as parameter in the model \
+
+- IMPORTANT! Params in model: pathology, volume \
+
+- The results represent Logistic regression with 3-fold (5 time repeated) CV using R-Caret package \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+
+vega_muts = c(as.character(unique(vega$Pathway)))
+tmp = pyrad
+tmp$pathology = as.factor(tmp$pathology)
+fit.control <- trainControl(method = "repeatedcv", 
+                            number = 3, repeats = 5, 
+                            classProbs = TRUE)
+
+for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+    print(par)
+    response =  par
+    if (response %in% vega_muts){
+       tmp$response = as.factor(tmp[,response])
+       tmp_ = tmp[complete.cases(tmp[,response]),]
+       tmp_[,"response"] = make.names(tmp_[,"response"])
+    } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
+        tmp_ = merge(tmp, cin, by = "sampleid")
+        tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
+        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    } else {
+       tmp_ = tmp
+       tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    }
+    # , paste(features_of_interest, collapse="+"))
+    fit <- train(as.formula(paste("response~pathology+volume")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
+    
+    summary(fit$finalModel)
+    
+    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+    p = ggplot(df, aes(d = response_var, m = Prob)) + 
+      geom_roc() +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=8))
+    auc = calc_auc(p)[3][[1]]
+    assign(p + ggtitle(paste0("Binary ",response," AUC: ",round(auc,4))), x = par)
+}
+
+ggarrange(rtk_kras,nrf2, pi3k, tgfb,p53,cell_cycle, wnt, myc, hippo, notch)
+ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danahaer)
+
+
+```
+
+
+# Can we use only radITH and Patholgy for the same results?
+
+- As it does not make sense to split small amount of observations by pathology I will include pathology as parameter in the model \
+
+- IMPORTANT! Params in model: pathology, radITH \
+
+- The results represent Logistic regression with 3-fold (5 time repeated) CV using R-Caret package \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+
+vega_muts = c(as.character(unique(vega$Pathway)))
+tmp = pyrad
+tmp$pathology = as.factor(tmp$pathology)
+fit.control <- trainControl(method = "repeatedcv", 
+                            number = 3, repeats = 5, 
+                            classProbs = TRUE)
+
+for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+    print(par)
+    response =  par
+    if (response %in% vega_muts){
+       tmp$response = as.factor(tmp[,response])
+       tmp_ = tmp[complete.cases(tmp[,response]),]
+       tmp_[,"response"] = make.names(tmp_[,"response"])
+    } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
+        tmp_ = merge(tmp, cin, by = "sampleid")
+        tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
+        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    } else {
+       tmp_ = tmp
+       tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    }
+    fit <- train(as.formula(paste("response~pathology+radITH")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
+    
+    summary(fit$finalModel)
+    
+    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+    p = ggplot(df, aes(d = response_var, m = Prob)) + 
+      geom_roc() +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=8))
+    auc = calc_auc(p)[3][[1]]
+    assign(p + ggtitle(paste0("Binary ",response," AUC: ",round(auc,4))), x = par)
+}
+
+ggarrange(rtk_kras,nrf2, pi3k, tgfb,p53,cell_cycle, wnt, myc, hippo, notch)
+ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danahaer)
+
+
+```
+
+
+
+# Final complicated model with interactio between volume and radITH
+
+- As it does not make sense to split small amount of observations by pathology I will include pathology as parameter in the model \
+
+- IMPORTANT! Params in model: chosen pyRad features, pathology, radITH and volume \
+
+- The results represent Logistic regression with 3-fold (5 time repeated) CV using R-Caret package \
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+
+vega_muts = c(as.character(unique(vega$Pathway)))
+tmp = pyrad
+tmp$pathology = as.factor(tmp$pathology)
+fit.control <- trainControl(method = "repeatedcv", 
+                            number = 3, repeats = 5, 
+                            classProbs = TRUE)
+
+for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+    print(par)
+    response =  par
+    if (response %in% vega_muts){
+       tmp$response = as.factor(tmp[,response])
+       tmp_ = tmp[complete.cases(tmp[,response]),]
+       tmp_[,"response"] = make.names(tmp_[,"response"])
+    } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
+        tmp_ = merge(tmp, cin, by = "sampleid")
+        tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
+        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    } else {
+       tmp_ = tmp
+       tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+    }
+    fit <- train(as.formula(paste("response~pathology+radITH+volume")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
+    
+    summary(fit$finalModel)
+    
+    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+    p = ggplot(df, aes(d = response_var, m = Prob)) + 
+      geom_roc() +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=8))
+    auc = calc_auc(p)[3][[1]]
+    assign(p + ggtitle(paste0("Binary ",response," AUC: ",round(auc,4))), x = par)
+}
+
+ggarrange(rtk_kras,nrf2, pi3k, tgfb,p53,cell_cycle, wnt, myc, hippo, notch)
+ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danahaer)
+
+
+```
+
+# Comparison to RNA Computed ITH
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+bioITHgenes = read.delim2("/Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/computed_files/ith_comparison_full.csv", sep = ",")
+bioITH = read.delim2("/Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/computed_files/patient_rna_ith_scores.csv", sep = ",")
+bioITH$sampleid = paste0(substr(bioITH$PatientID,0,3), "0",substr(bioITH$PatientID,4, 8))
+bioITH$rna_ith = as.numeric(bioITH$rna_ith)
+bioITH$SCNA_ith = as.numeric(bioITH$SCNA_ith)
+bioITH$SNV_ith = as.numeric(bioITH$SNV_ith)
+
+tmp = merge(pyrad, bioITH, by = "sampleid")
+
+p1 = ggplot(tmp, aes(x = SCNA_ith, y = radITH, color = pathology)) +
+  geom_point() + 
+  theme_minimal()+
+  geom_smooth(method = "lm", se = F) +
+  stat_cor()
+
+p2 = ggplot(tmp, aes(x = SNV_ith, y = radITH, color = pathology)) +
+  geom_point() + 
+  theme_minimal()+
+  geom_smooth(method = "lm", se = F) +
+  stat_cor()
+
+p3 = ggplot(tmp, aes(x = rna_ith, y = radITH, color = pathology)) +
+  geom_point() + 
+  theme_minimal()+
+  geom_smooth(method = "lm", se = F) +
+  stat_cor()
+
+ggarrange(p1,p2,p3)
+
+```
+
+
+
 
 
