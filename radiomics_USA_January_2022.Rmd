@@ -1016,35 +1016,56 @@ library(plotROC) ## For constructing ROC curves
 library(mgcv)    ## For fitting GAM models
 library(glmnet)  ## For fitting regularized models
 
-cin_measures = c(cin_measures,"hrd_score")
+sample_split = 0.75
+
 vega_muts = c(as.character(unique(vega$Pathway)))
 tmp = pyrad
 tmp$pathology = as.factor(tmp$pathology)
 fit.control <- trainControl(method = "repeatedcv", 
                             number = 3, repeats = 5, 
                             classProbs = TRUE)
+indx = sample(nrow(tmp),size= sample_split * nrow(tmp))
+train_tmp = tmp[indx,]
+test_tmp = tmp[-indx,]
 
-for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
-    #print(par)
+
+for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
+    print(par)
     response =  par
+    col_to_take = 2
     if (response %in% vega_muts){
-       tmp$response = as.factor(tmp[,response])
-       tmp_ = tmp[complete.cases(tmp[,response]),]
+       col_to_take = 2
+       test_tmp_ = train_tmp
+       train_tmp$response = as.factor(train_tmp[,response])
+       test_tmp_$response = as.factor(test_tmp_[,response])
+       tmp_ = train_tmp[complete.cases(train_tmp[,response]),]
        tmp_[,"response"] = make.names(tmp_[,"response"])
+       test_tmp_$response = as.factor(test_tmp_[,"response"])
     } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
-        tmp_ = merge(tmp, cin, by = "sampleid")
+        col_to_take = 1
+        tmp_ = merge(train_tmp, cin, by = "sampleid")
+        test_tmp_ = merge(test_tmp, cin, by = "sampleid")
         tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
-        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+        test_tmp_$hrd_score = test_tmp_$lst + test_tmp_$Telomeric.AI + test_tmp_$hrd
+        if (response == "hrd_score"){
+          tmp_$response = as.factor(ifelse(tmp_[,response] > 42, "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > 42, "High", "Low"))
+        } else {
+          tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
+        }
+        
     } else {
-       tmp_ = tmp
+       tmp_ = train_tmp
+       test_tmp_ = train_tmp
        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+       test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
     }
-    # , paste(features_of_interest, collapse="+"))
+       
+    
     fit <- train(as.formula(paste("response~pathology+radITH+volume+", paste(features_of_interest, collapse="+"))), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
-    
-    summary(fit$finalModel)
-    
-    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+       
+    df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
       geom_roc() +
       theme_minimal()+
@@ -1075,28 +1096,48 @@ tmp$pathology = as.factor(tmp$pathology)
 fit.control <- trainControl(method = "repeatedcv", 
                             number = 3, repeats = 5, 
                             classProbs = TRUE)
+indx = sample(nrow(tmp),size= sample_split * nrow(tmp))
+train_tmp = tmp[indx,]
+test_tmp = tmp[-indx,]
 
-for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+
+for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
     print(par)
     response =  par
+    col_to_take = 2
     if (response %in% vega_muts){
-       tmp$response = as.factor(tmp[,response])
-       tmp_ = tmp[complete.cases(tmp[,response]),]
+       col_to_take = 2
+       test_tmp_ = train_tmp
+       train_tmp$response = as.factor(train_tmp[,response])
+       test_tmp_$response = as.factor(test_tmp_[,response])
+       tmp_ = train_tmp[complete.cases(train_tmp[,response]),]
        tmp_[,"response"] = make.names(tmp_[,"response"])
+       test_tmp_$response = as.factor(test_tmp_[,"response"])
     } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
-        tmp_ = merge(tmp, cin, by = "sampleid")
+        col_to_take = 2
+        tmp_ = merge(train_tmp, cin, by = "sampleid")
+        test_tmp_ = merge(test_tmp, cin, by = "sampleid")
         tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
-        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+        test_tmp_$hrd_score = test_tmp_$lst + test_tmp_$Telomeric.AI + test_tmp_$hrd
+        if (response == "hrd_score"){
+          tmp_$response = as.factor(ifelse(tmp_[,response] > 42, "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > 42, "High", "Low"))
+        } else {
+          tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
+        }
+        
     } else {
-       tmp_ = tmp
+       tmp_ = train_tmp
+       test_tmp_ = train_tmp
        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+       test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
     }
-    # , paste(features_of_interest, collapse="+"))
+       
+    
     fit <- train(as.formula(paste("response~pathology+radITH+", paste(features_of_interest, collapse="+"))), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
-    
-    summary(fit$finalModel)
-    
-    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+       
+    df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
       geom_roc() +
       theme_minimal()+
@@ -1129,28 +1170,48 @@ tmp$pathology = as.factor(tmp$pathology)
 fit.control <- trainControl(method = "repeatedcv", 
                             number = 3, repeats = 5, 
                             classProbs = TRUE)
+indx = sample(nrow(tmp),size= sample_split * nrow(tmp))
+train_tmp = tmp[indx,]
+test_tmp = tmp[-indx,]
 
-for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+
+for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
     print(par)
     response =  par
+    col_to_take = 2
     if (response %in% vega_muts){
-       tmp$response = as.factor(tmp[,response])
-       tmp_ = tmp[complete.cases(tmp[,response]),]
+       col_to_take = 2
+       test_tmp_ = train_tmp
+       train_tmp$response = as.factor(train_tmp[,response])
+       test_tmp_$response = as.factor(test_tmp_[,response])
+       tmp_ = train_tmp[complete.cases(train_tmp[,response]),]
        tmp_[,"response"] = make.names(tmp_[,"response"])
+       test_tmp_$response = as.factor(test_tmp_[,"response"])
     } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
-        tmp_ = merge(tmp, cin, by = "sampleid")
+        col_to_take = 2
+        tmp_ = merge(train_tmp, cin, by = "sampleid")
+        test_tmp_ = merge(test_tmp, cin, by = "sampleid")
         tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
-        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+        test_tmp_$hrd_score = test_tmp_$lst + test_tmp_$Telomeric.AI + test_tmp_$hrd
+        if (response == "hrd_score"){
+          tmp_$response = as.factor(ifelse(tmp_[,response] > 42, "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > 42, "High", "Low"))
+        } else {
+          tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
+        }
+        
     } else {
-       tmp_ = tmp
+       tmp_ = train_tmp
+       test_tmp_ = train_tmp
        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+       test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
     }
-    # , paste(features_of_interest, collapse="+"))
+       
+    
     fit <- train(as.formula(paste("response~pathology+volume")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
-    
-    summary(fit$finalModel)
-    
-    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+       
+    df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
       geom_roc() +
       theme_minimal()+
@@ -1184,27 +1245,47 @@ tmp$pathology = as.factor(tmp$pathology)
 fit.control <- trainControl(method = "repeatedcv", 
                             number = 3, repeats = 5, 
                             classProbs = TRUE)
+indx = sample(nrow(tmp),size= sample_split * nrow(tmp))
+train_tmp = tmp[indx,]
+test_tmp = tmp[-indx,]
 
-for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+
+for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
     print(par)
     response =  par
+    col_to_take = 2
     if (response %in% vega_muts){
-       tmp$response = as.factor(tmp[,response])
-       tmp_ = tmp[complete.cases(tmp[,response]),]
+       col_to_take = 2
+       test_tmp_ = train_tmp
+       train_tmp$response = as.factor(train_tmp[,response])
+       test_tmp_$response = as.factor(test_tmp_[,response])
+       tmp_ = train_tmp[complete.cases(train_tmp[,response]),]
        tmp_[,"response"] = make.names(tmp_[,"response"])
+       test_tmp_$response = as.factor(test_tmp_[,"response"])
     } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
-        tmp_ = merge(tmp, cin, by = "sampleid")
+        col_to_take = 2
+        tmp_ = merge(train_tmp, cin, by = "sampleid")
+        test_tmp_ = merge(test_tmp, cin, by = "sampleid")
         tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
-        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+        test_tmp_$hrd_score = test_tmp_$lst + test_tmp_$Telomeric.AI + test_tmp_$hrd
+        if (response == "hrd_score"){
+          tmp_$response = as.factor(ifelse(tmp_[,response] > 42, "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > 42, "High", "Low"))
+        } else {
+          tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
+        }
     } else {
-       tmp_ = tmp
+       tmp_ = train_tmp
+       test_tmp_ = train_tmp
        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+       test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
     }
+       
+    
     fit <- train(as.formula(paste("response~pathology+radITH")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
-    
-    summary(fit$finalModel)
-    
-    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+       
+    df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
       geom_roc() +
       theme_minimal()+
@@ -1216,7 +1297,6 @@ for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
 
 ggarrange(rtk_kras,nrf2, pi3k, tgfb,p53,cell_cycle, wnt, myc, hippo, notch)
 ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danahaer)
-
 
 ```
 
@@ -1232,34 +1312,48 @@ ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danaha
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-
 vega_muts = c(as.character(unique(vega$Pathway)))
 tmp = pyrad
 tmp$pathology = as.factor(tmp$pathology)
 fit.control <- trainControl(method = "repeatedcv", 
                             number = 3, repeats = 5, 
                             classProbs = TRUE)
+indx = sample(nrow(tmp),size= sample_split * nrow(tmp))
+train_tmp = tmp[indx,]
+test_tmp = tmp[-indx,]
+
 
 for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
     print(par)
     response =  par
+    col_to_take = 2
     if (response %in% vega_muts){
-       tmp$response = as.factor(tmp[,response])
-       tmp_ = tmp[complete.cases(tmp[,response]),]
+       col_to_take = 2
+       test_tmp_ = train_tmp
+       train_tmp$response = as.factor(train_tmp[,response])
+       test_tmp_$response = as.factor(test_tmp_[,response])
+       tmp_ = train_tmp[complete.cases(train_tmp[,response]),]
        tmp_[,"response"] = make.names(tmp_[,"response"])
+       test_tmp_$response = as.factor(test_tmp_[,"response"])
     } else if (response %in% c(cin_measures, "total.til.score.danahaer")) {
-        tmp_ = merge(tmp, cin, by = "sampleid")
+        col_to_take = 2
+        tmp_ = merge(train_tmp, cin, by = "sampleid")
+        test_tmp_ = merge(test_tmp, cin, by = "sampleid")
         tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
+        test_tmp_$hrd_score = test_tmp_$lst + test_tmp_$Telomeric.AI + test_tmp_$hrd
         tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+        test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
     } else {
-       tmp_ = tmp
+       tmp_ = train_tmp
+       test_tmp_ = train_tmp
        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+       test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
     }
+       
+    
     fit <- train(as.formula(paste("response~pathology+radITH+volume")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
-    
-    summary(fit$finalModel)
-    
-    df <- data.frame(response_var = tmp_$response, Prob = fit$finalModel$fitted.values)
+       
+    df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
       geom_roc() +
       theme_minimal()+
