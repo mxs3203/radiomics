@@ -17,6 +17,7 @@ library(pheatmap)
 library(factoextra)
 library(cluster)
 library(tidyverse)
+library(ggbeeswarm)
 library(plotly)
 library(ggmosaic)
 library(ggpubr)
@@ -234,6 +235,28 @@ p3= ggplot(pyrad, aes(x = radITH,  y = FractionTrunk )) +
 ggarrange(p1,p2,p3)
 
 ```
+
+# Difference between radITH and Histology
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+ggplot(pyrad %>% filter(pathology != "Other"), aes(x = pathology,  y = radITH )) +
+  geom_violin()+
+  geom_beeswarm(cex = 2)+
+  stat_compare_means()+
+  theme_minimal() +
+  scale_color_brewer(palette="Set1")
+
+ggplot(pyrad %>% filter(pathology != "Other"), aes(x = pathology,  y = volume )) +
+  geom_violin()+
+  scale_y_log10()+
+  geom_beeswarm(cex = 2)+
+  stat_compare_means()+
+  theme_minimal() +
+  scale_color_brewer(palette="Set1")
+```
+
+
 
 # Mutations
 Let's group DRIVER mutations by Sanchez Vega def \
@@ -1016,7 +1039,9 @@ library(plotROC) ## For constructing ROC curves
 library(mgcv)    ## For fitting GAM models
 library(glmnet)  ## For fitting regularized models
 
-sample_split = 0.75
+cin_measures = c(cin_measures, "hrd_score")
+
+sample_split = 0.7
 
 vega_muts = c(as.character(unique(vega$Pathway)))
 tmp = pyrad
@@ -1067,7 +1092,7 @@ for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
        
     df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
-      geom_roc() +
+      geom_roc(labels=F) +
       theme_minimal()+
       geom_abline(intercept =0 , slope = 1) + 
       theme(plot.title = element_text(size=8))
@@ -1139,7 +1164,7 @@ for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
        
     df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
-      geom_roc() +
+      geom_roc(labels=F) +
       theme_minimal()+
       geom_abline(intercept =0 , slope = 1) + 
       theme(plot.title = element_text(size=8))
@@ -1213,7 +1238,7 @@ for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
        
     df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
-      geom_roc() +
+      geom_roc(labels=F) +
       theme_minimal()+
       geom_abline(intercept =0 , slope = 1) + 
       theme(plot.title = element_text(size=8))
@@ -1287,7 +1312,7 @@ for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
        
     df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
-      geom_roc() +
+      geom_roc(labels=F) +
       theme_minimal()+
       geom_abline(intercept =0 , slope = 1) + 
       theme(plot.title = element_text(size=8))
@@ -1323,7 +1348,7 @@ train_tmp = tmp[indx,]
 test_tmp = tmp[-indx,]
 
 
-for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
+for (par in c(vega_muts, unique(cin_measures), "total.til.score.danahaer")){
     print(par)
     response =  par
     col_to_take = 2
@@ -1341,8 +1366,13 @@ for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
         test_tmp_ = merge(test_tmp, cin, by = "sampleid")
         tmp_$hrd_score = tmp_$lst + tmp_$Telomeric.AI + tmp_$hrd
         test_tmp_$hrd_score = test_tmp_$lst + test_tmp_$Telomeric.AI + test_tmp_$hrd
-        tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
-        test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
+         if (response == "hrd_score"){
+          tmp_$response = as.factor(ifelse(tmp_[,response] > 42, "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > 42, "High", "Low"))
+        } else {
+          tmp_$response = as.factor(ifelse(tmp_[,response] > median(tmp_[,response]), "High", "Low"))
+          test_tmp_$response = as.factor(ifelse(test_tmp_[,response] > median(test_tmp_[,response]), "High", "Low"))
+        }
     } else {
        tmp_ = train_tmp
        test_tmp_ = train_tmp
@@ -1351,11 +1381,11 @@ for (par in c(vega_muts, cin_measures, "total.til.score.danahaer")){
     }
        
     
-    fit <- train(as.formula(paste("response~pathology+radITH+volume")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
+    fit <- train(as.formula(paste("response~pathology+radITH*volume")), method = "glm",  family = "binomial", trControl = fit.control, data = tmp_)
        
     df <- data.frame(response_var = test_tmp_$response, Prob = predict(fit, test_tmp_, type = "prob")[,col_to_take])
     p = ggplot(df, aes(d = response_var, m = Prob)) + 
-      geom_roc() +
+      geom_roc(labels=F) +
       theme_minimal()+
       geom_abline(intercept =0 , slope = 1) + 
       theme(plot.title = element_text(size=8))
@@ -1373,33 +1403,55 @@ ggarrange(wGII, hrd, lst, Telomeric.AI, wFLOH, hrd_score, total.til.score.danaha
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 bioITHgenes = read.delim2("/Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/computed_files/ith_comparison_full.csv", sep = ",")
-bioITH = read.delim2("/Users/au589901/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/computed_files/patient_rna_ith_scores.csv", sep = ",")
-bioITH$sampleid = paste0(substr(bioITH$PatientID,0,3), "0",substr(bioITH$PatientID,4, 8))
-bioITH$rna_ith = as.numeric(bioITH$rna_ith)
-bioITH$SCNA_ith = as.numeric(bioITH$SCNA_ith)
-bioITH$SNV_ith = as.numeric(bioITH$SNV_ith)
+tx_multi_reg_ge = as.data.frame(get(load("/Users/au589901/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/RNAseq/RSEM_gene_name_TPM_df_20200204.RData")))
 
-tmp = merge(pyrad, bioITH, by = "sampleid")
+tx_multi_reg_ge = tx_multi_reg_ge[which(tx_multi_reg_ge$gene_id %in% bioITHgenes$Gene),]
+colnames(tx_multi_reg_ge)
+melted = reshape2::melt(tx_multi_reg_ge)
+melted$sampleid = unlist(lapply(melted$variable, function(x){
+  paste0(substr(str_split(x,"_")[[1]][2],0,3), "0",substr(str_split(x,"_")[[1]][2],4, 8))
+}))
+melted$tumor = unlist(lapply(melted$variable, function(x){
+  str_split(str_split(x,"_")[[1]][4],"-")[[1]][1]
+}))
+melted$region = unlist(lapply(melted$variable, function(x){
+  str_split(str_split(x,"_")[[1]][4],"-")[[1]][2]
+}))
 
-p1 = ggplot(tmp, aes(x = SCNA_ith, y = radITH, color = pathology)) +
+melted_t1 = melted %>% 
+  filter(tumor == "T1",
+         gene_id %in% as.character(bioITHgenes$Gene))
+melted_t1$value = log2(melted_t1$value)
+
+
+res = melted_t1 %>% 
+  dplyr::group_by(sampleid, gene_id) %>%
+  dplyr::summarize(sds = sd(value,na.rm = T)) %>% 
+  dplyr::group_by(sampleid) %>%
+  dplyr::summarize(rnaITH=mean(sds, na.rm=T))
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+tmp = merge(pyrad, res, by = "sampleid")
+
+p1 = ggplot(tmp %>% filter(rnaITH < 1.5), aes(x = rnaITH, y = radITH, color = pathology)) +
   geom_point() + 
-  theme_minimal()+
+  theme_pubclean() +
   geom_smooth(method = "lm", se = F) +
   stat_cor()
 
-p2 = ggplot(tmp, aes(x = SNV_ith, y = radITH, color = pathology)) +
+p2 = ggplot(tmp %>% filter(rnaITH < 1.5), aes(x = rnaITH, y = radITH)) +
   geom_point() + 
-  theme_minimal()+
+  theme_pubclean() +
   geom_smooth(method = "lm", se = F) +
   stat_cor()
 
-p3 = ggplot(tmp, aes(x = rna_ith, y = radITH, color = pathology)) +
-  geom_point() + 
-  theme_minimal()+
-  geom_smooth(method = "lm", se = F) +
-  stat_cor()
+ggarrange(p1,p2)
+```
 
-ggarrange(p1,p2,p3)
 
 ```
 
