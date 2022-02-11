@@ -1,0 +1,336 @@
+---
+title: "Radiomics_11_Feb_Boston"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r }
+library(mRMRe)
+library(readxl)
+library(ggrepel)
+library(pheatmap)
+library(factoextra)
+library(cluster)
+library(tidyverse)
+library(ggbeeswarm)
+library(plotly)
+library(ggmosaic)
+library(ggpubr)
+library(ggbiplot)
+library(NMF)
+suppressMessages(library(survminer))
+suppressMessages(library(survplot))
+setwd("~/GenomeDK_local/CancerEvolution/phd/Analysis/radiomics/NMF_Radiomics/")
+
+source("~/GenomeDK_local/CancerEvolution/phd/Analysis/cnsignatures/functions.R")
+```
+
+## Loading Everything
+
+```{r pressure, echo=FALSE}
+indx100 = get(load("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/indx100.RData"))
+
+ith <- read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/comb_ith_analysis.20170127.txt", sep = "\t")
+ith$SNV_py <- as.numeric(as.character(ith$SNV_py))
+ith$SCNA <- as.numeric(as.character(ith$SCNA))
+ith$sampleID <- rownames(ith)
+ith2 <- read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/scna_ith_trx500.20180731.txt")
+ith2$FractionTrunk <- as.numeric(as.character(ith2$FractionTrunk))
+ith2$Heterogeneous <- as.numeric(as.character(ith2$Heterogeneous))
+ith2$Homogeneous <- as.numeric(as.character(ith2$Homogeneous))
+
+clin_ = as.data.frame(get(load(("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Clinical/tracerx_clin.20180701.RData"))))
+clin_$ID = rownames(clin_)
+clin_$Lesion1SizePath = as.numeric(as.character(clin_$Lesion1SizePath))
+clin = read_excel("~/Downloads/TRACERx all patients- July 2020 version 2.xlsx")
+clin$ID = paste0(substr(clin$Shorter_ID,0,3), "0",substr(clin$Shorter_ID,4, 8))
+pyrad_original = read_excel("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Radiomics/Radiomics20200801/PyRadiomics_20200718/original.xlsx")
+pyrad_original$pathology = case_when(
+  pyrad_original$pathhistr_tracerx_lesion1form == "Invasive adenocarcinoma" ~ "Invasive adenocarcinoma",
+  pyrad_original$pathhistr_tracerx_lesion1form == "Squamous cell carcinoma" ~ "Squamous cell carcinoma",
+  TRUE ~ "Other"
+)
+pyrad = read_excel("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Radiomics/Radiomics20200801/PyRadiomics_20200718/Merged.xlsx")
+pyrad = merge(pyrad, pyrad_original %>% select("sampleid","pathology"), by="sampleid", all.x = T)
+#pyrad = pyrad[-is.na(pyrad),]
+
+
+pyrad = merge(pyrad, clin, by.y = "ID", by.x = "sampleid", all.x = T )
+pyrad = merge(pyrad, clin_ %>% select("ID", "Lesion1SizePath"), by.y = "ID", by.x = "sampleid", all.x = T )
+
+phyl_groups = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/phyl_groups.txt")
+phyl_groups$sampleid = rownames(phyl_groups)
+
+mutations = read.csv2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/haveDriverMuts.csv", sep=",")
+
+oracle= read.csv2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/2020-12-08TX421_oracle.csv", sep = ",")
+oracle$sampleid = paste0(substr(oracle$PatientID, 3,5), "0", substr(oracle$PatientID, 6,8))
+oracle$RiskScore <- as.numeric(as.character(oracle$RiskScore))
+oracle = oracle %>% 
+  dplyr::group_by(sampleid) %>%
+  dplyr::summarize(RiskScore = mean(RiskScore, na.rm = T),
+            n = n(),
+            lows = sum(bin == "Low"),
+            highs = sum(bin == "High"),
+            bin = ifelse(highs >= lows, "High", "Low"))
+
+extra_info = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/NewITH/20210722_20210531_tracerx_sample_table_primary_421_annotated.tsv")
+new_ith = read.delim2("~/GenomeDK_local/CancerEvolution/phd/Datasets/TRACERx/Annotations/NewITH/20210805_Evo_subgroups.tsv")
+new_ith$sampleid = paste0(substr(as.character(new_ith$tumour_id), 0, 3),"0", substr(as.character(new_ith$tumour_id), 4, 6))
+
+first_f_column = which(colnames(pyrad) == "exponential_glcm_JointAverage"  )
+last_f_column = which(colnames(pyrad) == "original_glszm_SmallAreaLowGrayLevelEmphasis"  )
+features = colnames(pyrad)[first_f_column:last_f_column]
+other_info_inpyrad = c(colnames(pyrad)[1:first_f_column], colnames(pyrad)[(last_f_column+1):length(colnames(pyrad))])
+
+#pyrad = pyrad[complete.cases(pyrad[,features]), ]
+minMax <- function(x){
+  (x - min(x,na.rm = T))/(max(x,na.rm = T)-min(x,na.rm = T))
+}
+
+pyrad[,features] = na.omit(pyrad[,features])
+```
+
+
+
+# Discard Correlated Features
+
+```{r}
+
+tmp = pyrad[,features]
+cor_res <- cor(tmp)
+cor_res[upper.tri(cor_res)] <- 0
+diag(cor_res) <- 0
+data.new <- tmp[, !apply(cor_res, 2, function(x) any(abs(x) > 0.80, na.rm = TRUE))]
+features_of_interest_cor = colnames(data.new)
+cat("After removing highly cor. variables: ",length(colnames(data.new)), "\n")
+pyrad = pyrad[,c(features_of_interest_cor, other_info_inpyrad)]
+
+indx <- apply(pyrad[,features_of_interest_cor], 2, function(x) any(is.na(x) | is.infinite(x)))
+colnames(pyrad[,features_of_interest_cor])[indx]
+
+cor_m = cor(pyrad[,features_of_interest_cor])
+cor_m[is.na(cor_m)] <- 0
+pheatmap(cor_m, 
+         fontsize = 8)
+#pyrad = pyrad[complete.cases(pyrad[,features_of_interest]), ]
+```
+
+# Fix Clinical data
+- If you have an event within 3 years = 1
+- If you have no event within 3 years AND has at least 3 years follow-up = 0
+
+```{r}
+tmp = pyrad[pyrad$lung_specific_time/365 < 4, ]
+
+tmp = tmp[which(!is.na(tmp$cens_lung_specific)), ]
+
+pyrad = tmp
+```
+
+
+# Minumum Redundency maxium Relevance feature selection
+
+```{r}
+
+indx <- apply(pyrad[,features_of_interest_cor], 2, function(x) any(is.na(x) | is.infinite(x)))
+colnames(pyrad[,features_of_interest_cor])[indx]
+
+
+n_f = 3
+
+feature_data <-mRMR.data(data = 
+                           data.frame(target = as.ordered(pyrad$cens_lung_specific),
+                                      pyrad[,features_of_interest_cor])) 
+sampleCount(feature_data) 
+
+filter = mRMR.ensemble(data=feature_data, 
+                      target_indices = 1,
+                      feature_count = n_f,
+                      solution_count = 500)
+res_df = filter@filters[[1]]
+common = c()
+for (i in 2:ncol(res_df)){
+  common = c(common, res_df[res_df[,i] %in% res_df[,i-1],i])
+}
+
+index_of_features = count(common) %>% 
+  filter(x != 1) %>%
+  arrange(desc(freq)) %>% 
+  head(n_f) %>%
+  select(x) %>%
+  unlist()
+  
+features_of_interest_mrmr = feature_data@feature_names[index_of_features]
+```
+
+# Random forest feature extractor
+
+```{r}
+
+n_f_rf = 3
+tmp = pyrad
+
+rf = randomForest::randomForest(x = tmp[,features_of_interest_cor], 
+                                y = as.ordered(tmp$cens_lung_specific),
+                                importance=T, 
+                                nPerm = 100, 
+                                ntree = 1000)
+
+
+importance = data.frame(randomForest::importance(rf))
+importance$var = rownames(importance)
+features_of_interest_rf = importance %>% 
+  arrange(desc(MeanDecreaseGini)) %>% 
+  head(n_f_rf) %>% 
+  select(var) 
+features_of_interest_rf = features_of_interest_rf$var
+common_best_features = c(features_of_interest_rf , features_of_interest_mrmr)
+
+```
+
+
+# Modeling
+
+```{r}
+library(caret)
+library(visreg)  ## For visualizing regression models
+library(plotROC) ## For constructing ROC curves
+library(mgcv)    ## For fitting GAM models
+library(glmnet)
+pyrad$volume = pyrad$original_shape_MeshVolume.x
+pyrad$diameter = pyrad$original_shape_Maximum2DDiameterSlice.x
+
+tmp = pyrad %>% 
+  filter(pathology %in% c("Squamous cell carcinoma", "Invasive adenocarcinoma")) %>%
+  select(c(common_best_features,  "pathology", "cens_lung_specific", "volume", "diameter"))
+tmp$response = make.names(tmp$cens_lung_specific)
+tmp$pathology = as.factor(tmp$pathology)
+fit.control <- trainControl(method = "repeatedcv", 
+                            number = 3, repeats = 5, 
+                            classProbs = TRUE,
+                            search='grid')
+sample_split = 0.7
+model = "nb"
+indx = sample(nrow(tmp),size= sample_split * nrow(tmp))
+train_tmp = tmp[indx,]
+test_tmp = tmp[-indx,]
+
+   # Volume
+   fit <- train(as.formula(paste("response~pathology+volume")), 
+             method = model,  
+             family = "binomial",
+             trControl = fit.control,
+             data = train_tmp)
+
+    p1 = ggplot(data.frame(response_var = test_tmp$response, 
+              Prob = predict(fit, test_tmp, type="prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p1)[3][[1]]
+    p1 = p1 + ggtitle(paste0("Test AUC: ",round(auc,4)))
+    
+    p2 = ggplot(data.frame(response_var = train_tmp$response, 
+              Prob = predict(fit, train_tmp, type = "prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p2)[3][[1]]
+    p2 = p2 + ggtitle(paste0("Train AUC: ",round(auc,4)))
+    
+    
+    # DIAM
+    fit <- train(as.formula(paste("response~pathology+diameter")), 
+             method = model,  
+             family = "binomial",
+             trControl = fit.control,
+             data = train_tmp)
+
+    p3 = ggplot(data.frame(response_var = test_tmp$response, 
+              Prob = predict(fit, test_tmp, type="prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p3)[3][[1]]
+    p3 = p3 + ggtitle(paste0("Test AUC: ",round(auc,4)))
+    
+    p4 = ggplot(data.frame(response_var = train_tmp$response, 
+              Prob = predict(fit, train_tmp, type = "prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p4)[3][[1]]
+    p4 = p4 + ggtitle(paste0("Train AUC: ",round(auc,4)))
+    
+    # PyRAD
+    fit <- train(as.formula(paste("response~pathology+", paste(common_best_features, collapse="+"))), 
+             method = model,  
+             family = "binomial",
+             trControl = fit.control,
+             data = train_tmp)
+
+    p5 = ggplot(data.frame(response_var = test_tmp$response, 
+              Prob = predict(fit, test_tmp, type="prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p5)[3][[1]]
+    p5 = p5 + ggtitle(paste0("Test AUC: ",round(auc,4)))
+    
+    p6 = ggplot(data.frame(response_var = train_tmp$response, 
+              Prob = predict(fit, train_tmp, type = "prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p6)[3][[1]]
+    p6 = p6 + ggtitle(paste0("Train AUC: ",round(auc,4)))
+    
+    # PyRAD + Vol
+    fit <- train(as.formula(paste("response~pathology+volume+", paste(common_best_features, collapse="+"))), 
+             method = model,  
+             family = "binomial",
+             trControl = fit.control,
+             data = train_tmp)
+
+    p7 = ggplot(data.frame(response_var = test_tmp$response, 
+              Prob = predict(fit, test_tmp, type="prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p7)[3][[1]]
+    p7 = p7 + ggtitle(paste0("Test AUC: ",round(auc,4)))
+    
+    p8 = ggplot(data.frame(response_var = train_tmp$response, 
+              Prob = predict(fit, train_tmp, type = "prob")[,2]), 
+              aes(d = response_var, m = Prob)) + 
+      geom_roc(labels=F, n.cuts=20) +
+      theme_minimal()+
+      geom_abline(intercept =0 , slope = 1) + 
+      theme(plot.title = element_text(size=12))
+    auc = calc_auc(p8)[3][[1]]
+    p8 = p8 + ggtitle(paste0("Train AUC: ",round(auc,4)))
+    ggarrange(p2,p1, p4,p3, p6,p5,p8,p7, ncol = 2, nrow=4)
+
+```
+
+
